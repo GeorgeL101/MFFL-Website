@@ -1,0 +1,502 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>MFFL • Bracket</title>
+<style>
+  :root{ --bg:#0b1220; --panel:#121a2b; --border:#1e2a44; --text:#e6e9f2; --muted:#9fb0d2; --accent:#22c55e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(180deg,#0b1220,#0d1425 40%);color:var(--text);font:15px system-ui,Segoe UI,Roboto,Arial;padding-bottom:env(safe-area-inset-bottom)}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border);gap:12px;position:sticky;top:0;z-index:10;backdrop-filter:blur(6px)}
+  h1{font-size:20px;margin:0}
+  .tabs{display:flex;gap:10px;align-items:center}
+  .tabs a{display:inline-block;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#0e1728;color:#cfe2ff;text-decoration:none;white-space:nowrap}
+  .tabs a.active{background:#14213b;border-color:#2b3a5e}
+  .btn{border:1px solid var(--border);background:#0e1728;color:#cfe2ff;padding:8px 10px;border-radius:10px;cursor:pointer;min-height:40px;touch-action:manipulation}
+  .wrap{max-width:1200px;margin:0 auto;padding:20px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .section-title{display:flex;align-items:center;justify-content:space-between;margin:0 0 10px;font-size:16px;color:#fff;gap:10px}
+  .muted{color:var(--muted)}
+  .header-right{display:flex;align-items:center;gap:10px; position:relative;}
+
+  /* Segmented switch */
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .seg button{background:#0e1728;color:#cfe2ff;padding:8px 12px;border:0;cursor:pointer;min-height:40px;touch-action:manipulation}
+  .seg button.active{background:#14213b;border-left:1px solid #2b3a5e;border-right:1px solid #2b3a5e}
+
+  /* Bracket grid */
+  .bracket-wrap{overflow:auto;padding-bottom:4px; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity}
+  .bracket{display:grid;gap:16px}
+  .round{min-width:240px;display:flex;flex-direction:column;gap:12px;scroll-snap-align:start}
+  .round-title{font-size:12px;color:var(--muted);margin:0 0 6px 2px}
+  .match{border:1px solid var(--border);background:#0a1324;border-radius:12px;padding:10px}
+  .side{display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .who{display:flex;align-items:center;gap:8px;min-width:0}
+  .av{width:28px;height:28px;border-radius:50%;background:#10203a;border:1px solid #1d3259;flex:0 0 auto}
+  .av.hasimg{background-size:cover;background-position:center}
+  .tn{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+  .mgr{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;margin-top:2px}
+  .win{border:1px solid #256d1b;background:rgba(34,197,94,.08)}
+  .bye{opacity:.7;font-style:italic}
+
+  /* Scrollbar (horizontal) */
+  .bracket-wrap{ scrollbar-width:thin; scrollbar-color:#1e2a44 transparent; }
+  .bracket-wrap::-webkit-scrollbar{ height:10px; }
+  .bracket-wrap::-webkit-scrollbar-track{ background:transparent; }
+  .bracket-wrap::-webkit-scrollbar-thumb{ background:#1e2a44;border-radius:999px;border:2px solid transparent;background-clip:padding-box; }
+  .bracket-wrap::-webkit-scrollbar-thumb:hover{ background:#2a3b5f; }
+
+  /* ===== Notifications bell + popover (same as other pages) ===== */
+  .bell-btn{width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--border);background:#0e1728;color:#cfe2ff;border-radius:10px;cursor:pointer}
+  .bell-btn:hover{background:#14213b;border-color:#2b3a5e}
+  .bell-dot{position:absolute;top:-4px;right:-4px;background:#22c55e;color:#06210f;border-radius:999px;font-size:11px;line-height:1;padding:2px 6px;border:1px solid #063d25}
+  .notif-pop{position:absolute;top:calc(100% + 10px);right:0;width:min(92vw,380px);background:#0c1426;border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.45);display:none;z-index:20}
+  .notif-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}
+  .notif-title{font-weight:700}
+  .notif-list{max-height:60vh;overflow:auto;padding:8px}
+  .notif-item{display:flex;gap:10px;padding:10px;border:1px solid var(--border);border-radius:12px;background:#0a1324;margin:8px 0}
+  .notif-item .av{width:34px;height:34px;border-radius:50%;background:#10203a;border:1px solid #1d3259;flex:0 0 auto;display:grid;place-items:center;color:#cfe2ff;font-weight:700}
+  .notif-item .av.hasimg{color:transparent;background-size:cover;background-position:center}
+  .notif-meta{font-size:12px;color:var(--muted)}
+  .notif-empty{padding:16px;color:var(--muted)}
+  .notif-list{ scrollbar-width:thin; scrollbar-color:#1e2a44 transparent; }
+  .notif-list::-webkit-scrollbar{ width:10px; }
+  .notif-list::-webkit-scrollbar-track{ background:transparent; }
+  .notif-list::-webkit-scrollbar-thumb{ background:#1e2a44;border-radius:999px;border:2px solid transparent;background-clip:padding-box; }
+  .notif-list::-webkit-scrollbar-thumb:hover{ background:#2a3b5f; }
+
+  /* ===== Suggestion Box + Commish inbox (match Teams/Home) ===== */
+  .icon-btn{width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--border);background:#0e1728;color:#cfe2ff;border-radius:10px;cursor:pointer;min-height:36px;touch-action:manipulation}
+  .icon-btn:hover{background:#14213b;border-color:#2b3a5e}
+
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:40}
+  .modal{position:fixed;left:50%;top:16%;transform:translateX(-50%);width:min(92vw,520px);background:#0c1426;border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.45);display:none;z-index:41}
+  .modal .hd{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border)}
+  .modal .bd{padding:12px 14px;display:grid;gap:10px}
+  .textarea{min-height:120px;resize:vertical}
+  .btn.ghost{background:transparent}
+
+  .inbox-pop{position:absolute;top:calc(100% + 10px);right:0;width:min(92vw,420px);background:#0c1426;border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.45);display:none;z-index:30}
+  .inbox-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}
+  .inbox-list{max-height:60vh;overflow:auto;padding:8px; scrollbar-width:thin; scrollbar-color:#1e2a44 transparent;}
+  .inbox-item{border:1px solid var(--border);border-radius:12px;background:#0a1324;padding:10px;margin:8px 0}
+  .inbox-when{font-size:12px;color:var(--muted)}
+  .inbox-list::-webkit-scrollbar{ width:10px; }
+  .inbox-list::-webkit-scrollbar-track{ background:transparent; }
+  .inbox-list::-webkit-scrollbar-thumb{ background:#1e2a44;border-radius:999px;border:2px solid transparent;background-clip:padding-box; }
+  .inbox-list::-webkit-scrollbar-thumb:hover{ background:#2a3b5f; }
+
+  .toast{position:fixed;right:18px;bottom:18px;background:#10203a;color:#e6e9f2;border:1px solid var(--border);border-radius:12px;padding:10px 12px;box-shadow:0 10px 24px rgba(0,0,0,.35);z-index:60;display:none}
+
+  /* ========================= MOBILE OPTIMIZATIONS ========================= */
+  @media (max-width: 800px){
+    .wrap{padding:14px}
+    .section-title{flex-wrap:wrap}
+  }
+  @media (max-width: 700px){
+    header{flex-wrap:wrap;gap:8px 10px;padding:12px 14px}
+    h1{font-size:18px}
+    /* Reorder: title first, actions second, tabs full-width last */
+    h1{order:1}
+    .header-right{order:2}
+    .tabs{order:3;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:8px;scroll-snap-type:x mandatory;margin-inline:-4px;padding-inline:4px}
+    .tabs a{scroll-snap-align:start;padding:10px 12px;font-size:14px}
+    .tabs::-webkit-scrollbar{height:8px}
+    .tabs{scrollbar-width:thin}
+
+    /* Round columns narrower on phones */
+    .round{min-width:min(82vw, 220px)}
+    .tn{max-width:60vw}
+    .mgr{max-width:60vw}
+  }
+  @media (max-width: 420px){
+    .round{min-width:min(88vw, 200px)}
+    .toast{right:12px;bottom:calc(12px + env(safe-area-inset-bottom))}
+    .notif-pop, .inbox-pop{right:12px;width:min(100vw - 24px, 420px)}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>MFFL • Bracket</h1>
+    <nav class="tabs" aria-label="Primary">
+      <a href="/">Home</a>
+      <a href="/app/docs.html">About</a>
+      <a href="/app/teams.html">Spiff Bank</a>
+      <a class="active" href="/app/bracket.html">Bracket</a>
+      <a href="/app/cams.html">Cam's Corner</a>
+    </nav>
+    <div class="header-right">
+      <!-- 💡 Suggest -->
+      <button id="suggestBtn" class="icon-btn" title="Submit a suggestion" aria-label="Submit a suggestion">💡</button>
+
+      <!-- 🔐 Commish unlock + 📥 inbox (hidden until unlocked) -->
+      <button id="commishBtn" class="icon-btn" title="Commissioner unlock" aria-label="Commissioner unlock">🔐</button>
+      <button id="suggestInboxBtn" class="icon-btn" title="Suggestions inbox" aria-label="Open suggestions inbox" style="display:none">📥</button>
+
+      <!-- 📥 Suggestions inbox popover -->
+      <div id="suggestInbox" class="inbox-pop" role="dialog" aria-label="Suggestions Inbox">
+        <div class="inbox-head">
+          <div style="font-weight:700">Suggestion Inbox</div>
+          <button id="inboxRefresh" class="btn" type="button">Refresh</button>
+        </div>
+        <div id="inboxList" class="inbox-list"><div class="muted" style="padding:10px">Loading…</div></div>
+      </div>
+
+      <!-- bell -->
+      <button id="bellBtn" class="bell-btn" aria-label="Activity">&#128276;<span id="bellDot" class="bell-dot" style="display:none">•</span></button>
+      <div id="notifPop" class="notif-pop" role="dialog" aria-label="Activity" aria-modal="false">
+        <div class="notif-head">
+          <div class="notif-title">Activity</div>
+          <button id="notifRefresh" class="btn" type="button">Refresh</button>
+        </div>
+        <div id="notifList" class="notif-list"><div class="notif-empty">Loading…</div></div>
+      </div>
+      <form method="POST" action="/logout"><button class="btn" type="submit">Log out</button></form>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="card">
+      <div class="section-title">
+        <span>🏆 Playoffs Bracket</span>
+        <div class="seg" role="tablist" aria-label="Bracket view">
+          <button id="btnWinners" class="active" type="button" role="tab" aria-selected="true">Winners</button>
+          <button id="btnLosers" type="button" role="tab" aria-selected="false">Losers</button>
+        </div>
+      </div>
+
+      <div id="meta" class="muted" style="margin:0 0 10px" aria-live="polite"></div>
+
+      <div class="bracket-wrap">
+        <div id="bracket" class="bracket"></div>
+      </div>
+    </section>
+  </div>
+
+<script>
+/* ---------- Helpers ---------- */
+function avStyle(url){ return url ? 'av hasimg" style="background-image:url(\''+url+'\')' : 'av'; }
+function sideHTML(t, isWinner){
+  if (!t) return `<div class="who bye"><div class="tn">— Bye —</div></div>`;
+  return `
+    <div class="who">
+      <div class="${avStyle(t.avatarThumb)}"></div>
+      <div style="min-width:0">
+        <div class="tn">${t.team||'Team'}</div>
+        <div class="mgr">${t.manager||''}</div>
+      </div>
+    </div>
+    ${isWinner ? '<div class="muted" style="font-size:12px;margin-left:8px">W</div>' : ''}`;
+}
+
+/* ---------- Render ---------- */
+function groupByRound(nodes){
+  const by = new Map();
+  for (const n of nodes){
+    const r = n.r || 1;
+    if (!by.has(r)) by.set(r, []);
+    by.get(r).push(n);
+  }
+  for (const [r, arr] of by) arr.sort((a,b)=>(a.m||0)-(b.m||0));
+  return Array.from(by.entries()).sort((a,b)=>a[0]-b[0]);
+}
+
+let currentView = 'winners';
+function roundMin(){
+  if (window.matchMedia('(max-width:420px)').matches) return 200;
+  if (window.matchMedia('(max-width:700px)').matches) return 220;
+  return 240;
+}
+function renderBracket(data, which=currentView){
+  currentView = which;
+  const nodes = (which==='winners'? data.winners : data.losers) || [];
+  const bracketEl = document.getElementById('bracket');
+  const metaEl = document.getElementById('meta');
+
+  if (!nodes.length){
+    bracketEl.style.gridTemplateColumns = '1fr';
+    bracketEl.innerHTML = `<div class="muted">No ${which} bracket data yet.</div>`;
+    metaEl.textContent = '';
+    return;
+  }
+
+  const rounds = groupByRound(nodes);
+  const min = roundMin();
+  bracketEl.style.gridTemplateColumns = `repeat(${rounds.length}, minmax(${min}px, 1fr))`;
+
+  bracketEl.innerHTML = rounds.map(([roundNum, arr])=>{
+    const title = `Round ${roundNum}`;
+    const col = arr.map(n=>{
+      const t1 = n.t1, t2 = n.t2;
+      const isW1 = n.w && t1 && Number(n.w) === Number(t1.roster_id);
+      const isW2 = n.w && t2 && Number(n.w) === Number(t2.roster_id);
+      return `
+        <div class="match ${isW1||isW2?'win':''}">
+          <div class="side">${sideHTML(t1, isW1)}</div>
+          <div style="height:8px"></div>
+          <div class="side">${sideHTML(t2, isW2)}</div>
+        </div>`;
+    }).join('');
+    return `
+      <div class="round">
+        <div class="round-title">${title}</div>
+        ${col}
+      </div>`;
+  }).join('');
+
+  metaEl.textContent = data.playoff_start_week ? `Playoffs start Week ${data.playoff_start_week}` : '';
+}
+
+/* ---------- Load ---------- */
+let BRACKET = null;
+async function fetchBracket(){
+  const r = await fetch('/api/sleeper/bracket');
+  BRACKET = await r.json();
+  renderBracket(BRACKET, 'winners');
+}
+
+/* ---------- Segmented toggle ---------- */
+const btnW = document.getElementById('btnWinners');
+const btnL = document.getElementById('btnLosers');
+btnW.addEventListener('click', ()=>{
+  btnW.classList.add('active'); btnL.classList.remove('active');
+  btnW.setAttribute('aria-selected','true'); btnL.setAttribute('aria-selected','false');
+  renderBracket(BRACKET||{}, 'winners');
+}, {passive:true});
+btnL.addEventListener('click', ()=>{
+  btnL.classList.add('active'); btnW.classList.remove('active');
+  btnL.setAttribute('aria-selected','true'); btnW.setAttribute('aria-selected','false');
+  renderBracket(BRACKET||{}, 'losers');
+}, {passive:true});
+
+/* Make bracket responsive to orientation/resize */
+window.addEventListener('resize', ()=>{ if (BRACKET) renderBracket(BRACKET, currentView); }, {passive:true});
+
+/* ===================== Notifications UI (reuse) ===================== */
+const bellBtn = document.getElementById('bellBtn');
+const bellDot = document.getElementById('bellDot');
+const notifPop = document.getElementById('notifPop');
+const notifList = document.getElementById('notifList');
+const notifRefresh = document.getElementById('notifRefresh');
+let notifLoaded = false;
+
+function timeAgo(iso){
+  const s = Math.floor((Date.now() - new Date(iso).getTime())/1000);
+  const m = Math.floor(s/60), h = Math.floor(m/60), d = Math.floor(h/24);
+  if (d>0) return d+'d ago'; if (h>0) return h+'h ago'; if (m>0) return m+'m ago'; return 'just now';
+}
+function notifAvatar(team){
+  const url = team?.avatarThumb;
+  if (url) return `<div class="av hasimg" style="background-image:url('${url}')">.</div>`;
+  const init = (team?.team||'?').split(/\s+/).map(s=>s[0]||'').slice(0,2).join('').toUpperCase() || '🙂';
+  return `<div class="av">${init}</div>`;
+}
+function describeTx(t){
+  const tlabel = ({waiver:'waiver', free_agent:'free agent', trade:'trade', draft:'draft'}[t.type]) || t.type;
+  if (t.type==='trade' && t.rosters?.length>=2){
+    const a=t.rosters[0]?.team, b=t.rosters[1]?.team;
+    return `<strong>${a}</strong> ↔ <strong>${b}</strong> completed a trade.`;
+  }
+  const add = t.adds?.[0];
+  const drop = t.drops?.[0];
+  if (add && drop){
+    return `<strong>${add.to.team}</strong> added <strong>${add.name}</strong> and dropped <strong>${drop.name}</strong> (${tlabel}).`;
+  }
+  if (add){
+    return `<strong>${add.to.team}</strong> added <strong>${add.name}</strong> (${tlabel})${t.waiver_bid?` for $${t.waiver_bid}`:''}.`;
+  }
+  if (drop){
+    return `<strong>${drop.from.team}</strong> dropped <strong>${drop.name}</strong>.`;
+  }
+  return `${t.type} activity.`;
+}
+async function loadNotifications(force=false){
+  if (notifLoaded && !force) return;
+  notifList.innerHTML = `<div class="notif-empty">Loading…</div>`;
+  try{
+    const r = await fetch('/api/sleeper/transactions');
+    const data = await r.json();
+    const items = (data.items||[]);
+    bellDot.style.display = items.length ? '' : 'none';
+    if (!items.length){
+      notifList.innerHTML = `<div class="notif-empty">No recent activity.</div>`;
+      notifLoaded = true; return;
+    }
+    notifList.innerHTML = items.map(t=>{
+      const team = (t.rosters&&t.rosters[0]) || null;
+      return `<div class="notif-item">
+        ${notifAvatar(team)}
+        <div>
+          <div>${describeTx(t)}</div>
+          <div class="notif-meta">${timeAgo(t.when)} • Week ${t.round}</div>
+        </div>
+      </div>`;
+    }).join('');
+    notifLoaded = true;
+  }catch(e){
+    notifList.innerHTML = `<div class="notif-empty">Could not load activity.</div>`;
+  }
+}
+function toggleNotif(){
+  const open = notifPop.style.display === 'block';
+  if (open){
+    notifPop.style.display = 'none';
+  }else{
+    notifPop.style.display = 'block';
+    loadNotifications(false);
+  }
+}
+bellBtn.addEventListener('click', (e)=>{ e.stopPropagation(); toggleNotif(); });
+notifRefresh.addEventListener('click', (e)=>{ e.stopPropagation(); notifLoaded=false; loadNotifications(true); });
+document.addEventListener('click', (e)=>{
+  if (notifPop.style.display==='block' && !notifPop.contains(e.target) && e.target!==bellBtn){
+    notifPop.style.display='none';
+  }
+});
+/* ===================================================================== */
+
+/* ================= Suggestion Box + Commish (match Teams) ================= */
+const modalBackdrop = document.getElementById('modalBackdrop') || (function(){
+  const el = document.createElement('div'); el.id='modalBackdrop'; el.className='modal-backdrop'; document.body.appendChild(el); return el;
+})();
+function ensureModal(id, html){
+  if (!document.getElementById(id)) {
+    const div = document.createElement('div'); div.innerHTML = html; document.body.appendChild(div);
+  }
+}
+ensureModal('suggestModal', `
+<div id="suggestModal" class="modal" role="dialog" aria-label="Submit a suggestion">
+  <div class="hd">
+    <div style="font-weight:700">Submit a suggestion</div>
+    <button class="btn ghost" type="button" onclick="(document.getElementById('suggestModal').style.display='none', document.getElementById('modalBackdrop').style.display='none')">✕</button>
+  </div>
+  <form id="suggestForm" class="bd">
+    <input class="input" name="name" placeholder="Your name (optional)"/>
+    <textarea class="textarea input" name="text" placeholder="Your suggestion…" required></textarea>
+    <div class="row" style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn ghost" type="button" onclick="(document.getElementById('suggestModal').style.display='none', document.getElementById('modalBackdrop').style.display='none')">Cancel</button>
+      <button class="btn" type="submit">Send</button>
+    </div>
+  </form>
+</div>`);
+ensureModal('commishModal', `
+<div id="commishModal" class="modal" role="dialog" aria-label="Commissioner unlock">
+  <div class="hd">
+    <div style="font-weight:700">Commissioner unlock</div>
+    <button class="btn ghost" type="button" onclick="(document.getElementById('commishModal').style.display='none', document.getElementById('modalBackdrop').style.display='none')">✕</button>
+  </div>
+  <form id="commishForm" class="bd">
+    <input class="input" name="commish_password" type="password" placeholder="Commissioner password" required/>
+    <div class="row" style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn ghost" type="button" onclick="(document.getElementById('commishModal').style.display='none', document.getElementById('modalBackdrop').style.display='none')">Cancel</button>
+      <button class="btn" type="submit">Unlock</button>
+    </div>
+  </form>
+</div>`);
+if (!document.getElementById('toast')){
+  const t = document.createElement('div'); t.id='toast'; t.className='toast'; document.body.appendChild(t);
+}
+
+const suggestBtn = document.getElementById('suggestBtn');
+const commishBtn = document.getElementById('commishBtn');
+const inboxBtn   = document.getElementById('suggestInboxBtn');
+const inboxPop   = document.getElementById('suggestInbox');
+const inboxList  = document.getElementById('inboxList');
+const inboxRefresh = document.getElementById('inboxRefresh');
+const toastEl = document.getElementById('toast');
+let isCommish = false;
+
+function showToast(msg){ toastEl.textContent = msg; toastEl.style.display = 'block'; setTimeout(()=> toastEl.style.display='none', 2200); }
+function openModal(el){ modalBackdrop.style.display='block'; el.style.display='block'; }
+function closeModal(el){ el.style.display='none'; modalBackdrop.style.display='none'; }
+
+suggestBtn.addEventListener('click', ()=> openModal(document.getElementById('suggestModal')));
+commishBtn.addEventListener('click', ()=> openModal(document.getElementById('commishModal')));
+modalBackdrop.addEventListener('click', ()=>{ closeModal(document.getElementById('suggestModal')); closeModal(document.getElementById('commishModal')); });
+
+const suggestForm = document.getElementById('suggestForm');
+const commishForm = document.getElementById('commishForm');
+
+if (suggestForm){
+  suggestForm.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const fd = new FormData(suggestForm);
+    const payload = { name: fd.get('name')||'', text: fd.get('text')||'' };
+    try{
+      const r = await fetch('/api/suggestions', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(payload) });
+      const j = await r.json();
+      if (!r.ok || !j.ok) throw new Error(j.error || 'Failed');
+      suggestForm.reset();
+      closeModal(document.getElementById('suggestModal'));
+      showToast('Suggestion submitted. Thanks!');
+    }catch{ showToast('Could not submit suggestion.'); }
+  });
+}
+if (commishForm){
+  commishForm.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const fd = new FormData(commishForm);
+    try{
+      const r = await fetch('/commish-login', {
+        method:'POST',
+        headers:{ 'content-type':'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ commish_password: fd.get('commish_password') })
+      });
+      const j = await r.json();
+      if (!r.ok || !j.ok) throw new Error(j.error || 'Failed');
+      isCommish = true;
+      updateCommishUI();
+      closeModal(document.getElementById('commishModal'));
+      showToast('Commissioner unlocked.');
+      await loadInbox(true);
+    }catch{ showToast('Invalid commissioner password.'); }
+  });
+}
+
+async function loadInbox(force=false){
+  if (!isCommish) return;
+  if (force) inboxList.innerHTML = '<div class="muted" style="padding:10px">Loading…</div>';
+  try{
+    const r = await fetch('/api/suggestions'); const data = await r.json();
+    if (!r.ok) throw new Error();
+    const items = data.items || [];
+    if (!items.length){
+      inboxList.innerHTML = '<div class="muted" style="padding:10px">No suggestions yet.</div>';
+      return;
+    }
+    inboxList.innerHTML = items.map(s => `
+      <div class="inbox-item">
+        <div class="inbox-when">${new Date(s.when).toLocaleString()}</div>
+        <div style="margin-top:6px">${(s.name ? `<strong>${String(s.name).replace(/</g,'&lt;')}</strong>: ` : '')}${String(s.text||'').replace(/</g,'&lt;')}</div>
+      </div>`).join('');
+  }catch{
+    inboxList.innerHTML = '<div class="muted" style="padding:10px">Could not load suggestions.</div>';
+  }
+}
+function updateCommishUI(){ inboxBtn.style.display = isCommish ? '' : 'none'; }
+
+inboxBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  const open = inboxPop.style.display === 'block';
+  inboxPop.style.display = open ? 'none' : 'block';
+  if (!open) loadInbox(true);
+});
+inboxRefresh.addEventListener('click', (e)=>{ e.stopPropagation(); loadInbox(true); });
+document.addEventListener('click', (e)=>{
+  if (inboxPop.style.display === 'block' && !inboxPop.contains(e.target) && e.target !== inboxBtn) {
+    inboxPop.style.display = 'none';
+  }
+});
+
+(async function checkMe(){
+  try{ const r = await fetch('/api/me'); const me = await r.json(); isCommish = !!me.is_commish; updateCommishUI(); }catch{}
+})();
+/* ===================================================================== */
+
+/* ---------- Init ---------- */
+fetchBracket();
+</script>
+</body>
+</html>

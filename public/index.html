@@ -1,0 +1,801 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>MFFL • Home</title>
+<style>
+  :root{ --bg:#0b1220; --panel:#121a2b; --border:#1e2a44; --text:#e6e9f2; --muted:#9fb0d2; --accent:#22c55e; --sub:#7dd3fc; }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(180deg,#0b1220,#0d1425 40%);color:var(--text);font:15px system-ui,Segoe UI,Roboto,Arial;padding-bottom:env(safe-area-inset-bottom)}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border);backdrop-filter:blur(6px);position:sticky;top:0;z-index:10;gap:12px}
+  h1{font-size:20px;margin:0}
+  .tabs{display:flex;gap:10px;align-items:center}
+  .tabs a{display:inline-block;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#0e1728;color:#cfe2ff;text-decoration:none;white-space:nowrap}
+  .tabs a.active{background:#14213b;border-color:#2b3a5e}
+  .wrap{max-width:1200px;margin:0 auto;padding:20px}
+  .grid{display:grid;gap:18px}
+  @media(min-width:980px){ .grid{grid-template-columns: 1.3fr 1fr} }
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .section-title{display:flex;align-items:center;justify-content:space-between;margin:0 0 10px;font-size:16px;color:#fff}
+  .muted{color:var(--muted)}
+
+  /* LEFT COLUMN LAYOUT: announcements auto, calendar uses remaining height */
+  .left{display:grid;grid-template-rows:auto 1fr;gap:18px;min-height:0}
+  .cal-card{display:flex;flex-direction:column;min-height:0;max-height:78vh}
+  .cal{display:flex;flex-direction:column;gap:10px;min-height:0;flex:1}
+  .cal-head{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .dow-row{flex:0 0 auto;display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .day-grid{flex:0 0 auto;display:grid;grid-template-columns:repeat(7, 1fr);gap:6px}
+  .games{flex:1 1 auto;overflow:auto;padding-right:4px}
+
+  /* Calendar nav buttons — themed */
+  .cal-head .nav{display:flex;gap:8px}
+  .cal-head .nav button{
+    border:1px solid var(--border);
+    background:#0e1728;
+    color:#cfe2ff;
+    padding:8px 10px;
+    border-radius:10px;
+    cursor:pointer;
+    min-height:40px; touch-action:manipulation;
+  }
+  .cal-head .nav button:hover{ background:#14213b; border-color:#2b3a5e; }
+  .cal-head .nav button:focus{ outline:2px solid var(--sub); outline-offset:2px; }
+  .cal-head .nav button:active{ transform:translateY(1px); }
+
+  /* Calendar visuals */
+  .dow, .day{display:grid;place-items:center}
+  .dow{padding:6px 0;color:var(--muted);font-size:12px}
+  .day{aspect-ratio:1/1;border:1px solid var(--border);border-radius:12px;background:#0c1426;position:relative}
+  .day .num{position:absolute;top:6px;left:8px;font-size:12px;color:#b8c7e8}
+  .day.today{border-color:#22c55e}
+  .day.selected{outline:2px solid var(--sub)}
+  .day button{all:unset;position:absolute;inset:0;cursor:pointer}
+
+  /* Games list rows */
+  .game{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);border-radius:12px;padding:10px;background:#0a1324}
+  .teams{display:flex;gap:8px;align-items:center}
+  .badge{font-size:11px;background:#d1fadf;border:0;padding:2px 8px;border-radius:999px;color:#064e3b}
+  .tv{font-size:12px;color:#8dd1ff}
+
+  /* Roster preview (read-only here) */
+  .roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+  .member{display:flex;align-items:center;gap:12px;border:1px solid var(--border);background:#0c1527;padding:12px;border-radius:14px}
+  .avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#10203a;border:1px solid #1d3259;font-weight:700}
+  .team{font-weight:600}
+
+  footer{padding:18px 20px;color:var(--muted);text-align:center;border-top:1px solid var(--border);margin-top:30px}
+  .btn{border:1px solid var(--border);background:#0e1728;color:#cfe2ff;padding:8px 10px;border-radius:10px;min-height:40px;touch-action:manipulation}
+  .header-right{display:flex;align-items:center;gap:10px; position:relative;}
+
+  /* Themed, pill-style scrollbar for the games list */
+  .games{ scrollbar-width:thin; scrollbar-color:#1e2a44 transparent; }
+  .games::-webkit-scrollbar{ width:10px; }
+  .games::-webkit-scrollbar-track{ background:transparent; }
+  .games::-webkit-scrollbar-thumb{
+    background:#1e2a44;
+    border-radius:999px;
+    border:2px solid transparent;
+    background-clip:padding-box;
+  }
+  .games::-webkit-scrollbar-thumb:hover{ background:#2a3b5f; }
+  .games::-webkit-scrollbar-corner{ background:transparent; }
+
+  /* ===== Notifications bell + popover ===== */
+  .bell-btn{width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--border);background:#0e1728;color:#cfe2ff;border-radius:10px;cursor:pointer}
+  .bell-btn:hover{background:#14213b;border-color:#2b3a5e}
+  .bell-dot{position:absolute;top:-4px;right:-4px;background:#22c55e;color:#06210f;border-radius:999px;font-size:11px;line-height:1;padding:2px 6px;border:1px solid #063d25}
+
+  .notif-pop{position:absolute;top:calc(100% + 10px);right:0;width:min(92vw,380px);background:#0c1426;border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.45);display:none;z-index:20}
+  .notif-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}
+  .notif-title{font-weight:700}
+  .notif-list{max-height:60vh;overflow:auto;padding:8px}
+  .notif-item{display:flex;gap:10px;padding:10px;border:1px solid var(--border);border-radius:12px;background:#0a1324;margin:8px 0}
+  .notif-item .av{width:34px;height:34px;border-radius:50%;background:#10203a;border:1px solid #1d3259;flex:0 0 auto;display:grid;place-items:center;color:#cfe2ff;font-weight:700}
+  .notif-item .av.hasimg{color:transparent;background-size:cover;background-position:center}
+  .notif-meta{font-size:12px;color:var(--muted)}
+  .notif-empty{padding:16px;color:var(--muted)}
+ 
+
+  /* Popover scrollbar themed like games */
+  .notif-list{ scrollbar-width:thin; scrollbar-color:#1e2a44 transparent; }
+  .notif-list::-webkit-scrollbar{ width:10px; }
+  .notif-list::-webkit-scrollbar-track{ background:transparent; }
+  .notif-list::-webkit-scrollbar-thumb{
+    background:#1e2a44;border-radius:999px;border:2px solid transparent;background-clip:padding-box;
+  }
+  .notif-list::-webkit-scrollbar-thumb:hover{ background:#2a3b5f; }
+
+  /* ===== Suggestion Box + Commish inbox ===== */
+  .icon-btn{width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--border);background:#0e1728;color:#cfe2ff;border-radius:10px;cursor:pointer;min-height:36px;touch-action:manipulation}
+  .icon-btn:hover{background:#14213b;border-color:#2b3a5e}
+
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:40}
+  .modal{position:fixed;left:50%;top:16%;transform:translateX(-50%);width:min(92vw,520px);background:#0c1426;border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.45);display:none;z-index:41}
+  .modal .hd{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border)}
+  .modal .bd{padding:12px 14px;display:grid;gap:10px}
+  .input, .textarea{border:1px solid var(--border);background:#0e1728;color:#e6e9f2;border-radius:10px;padding:10px}
+  .textarea{min-height:120px;resize:vertical}
+  .row{display:flex;gap:10px;align-items:center;justify-content:flex-end}
+  .btn.ghost{background:transparent}
+
+  .inbox-pop{position:absolute;top:calc(100% + 10px);right:0;width:min(92vw,420px);background:#0c1426;border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.45);display:none;z-index:30}
+  .inbox-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}
+  .inbox-list{max-height:60vh;overflow:auto;padding:8px; scrollbar-width:thin; scrollbar-color:#1e2a44 transparent;}
+  .inbox-item{border:1px solid var(--border);border-radius:12px;background:#0a1324;padding:10px;margin:8px 0}
+  .inbox-when{font-size:12px;color:var(--muted)}
+  .inbox-list::-webkit-scrollbar{ width:10px; }
+  .inbox-list::-webkit-scrollbar-track{ background:transparent; }
+  .inbox-list::-webkit-scrollbar-thumb{
+    background:#1e2a44;border-radius:999px;border:2px solid transparent;background-clip:padding-box;
+  }
+  .inbox-list::-webkit-scrollbar-thumb:hover{ background:#2a3b5f; }
+
+  /* Keep popovers fully on-screen on phones */
+  @media (max-width: 700px){
+    .inbox-pop,
+    .notif-pop{
+      position: fixed;
+      left: max(12px, env(safe-area-inset-left));
+      right: max(12px, env(safe-area-inset-right));
+      width: auto;
+      max-width: 420px;
+      top: 64px; /* JS refines this */
+      max-height: calc(80vh - env(safe-area-inset-bottom));
+    }
+  }
+
+  .toast{position:fixed;right:18px;bottom:18px;background:#10203a;color:#e6e9f2;border:1px solid var(--border);border-radius:12px;padding:10px 12px;box-shadow:0 10px 24px rgba(0,0,0,.35);z-index:60;display:none}
+
+  /* ===== Announcements styling (for admin controls) ===== */
+  .ann{border:1px solid var(--border);border-radius:12px;background:#0a1324;padding:10px;margin:8px 0}
+  .ann-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .ann-head h3{margin:0;font-size:15px}
+  .ann-actions{display:flex;gap:8px;align-items:center}
+  .ann-del{border-color:#3a2630}
+  .ann-del:hover{background:#2a1320;border-color:#5a2a3a}
+
+  /* ===== Cam’s Corner peel floating in the far-right gutter ===== */
+  .cams-peel{
+    position:fixed;
+    right:clamp(12px,4vw,28px);
+    top:calc(72px + 14px);
+    width:min(34vw,360px);
+    height:170px;
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:
+      radial-gradient(200px 100px at 100% 0, rgba(255,255,255,.12), rgba(255,255,255,0) 70%),
+      linear-gradient(135deg,#0e1728,#0c1426);
+    box-shadow:0 18px 38px rgba(0,0,0,.35);
+    padding:12px;
+    text-decoration:none;
+    color:var(--text);
+    display:flex;
+    align-items:flex-end;
+    justify-content:flex-start;
+    transition:transform .18s ease, box-shadow .18s ease;
+    overflow:hidden;
+    z-index:8;
+  }
+  .cams-peel:hover{ transform:translateY(-2px); box-shadow:0 22px 44px rgba(0,0,0,.45); }
+  .cams-peel:after{
+    content:"";
+    position:absolute; right:0; top:0;
+    width:0; height:0;
+    border-style:solid;
+    border-width:0 38px 38px 0;
+    border-color:transparent #1e2a44 #14213b transparent;
+    filter:drop-shadow(0 2px 0 rgba(0,0,0,.25));
+    transition:border-width .18s ease;
+  }
+  .cams-peel:hover:after{ border-width:0 46px 46px 0; }
+  .cams-kicker{font-size:12px;color:#9fb0d2;margin-bottom:4px}
+  .cams-title{font-weight:800;font-size:22px}
+  .cams-sub{font-size:12px;color:#9fb0d2;margin-top:2px}
+  @media (max-width:1100px){ .cams-peel{display:none;} }
+
+  /* ========================= MOBILE OPTIMIZATIONS ========================= */
+  @media (max-width: 700px){
+    header{flex-wrap:wrap;gap:8px 10px;padding:12px 14px}
+    h1{font-size:18px}
+    .header-right{order:2}
+    .tabs{order:3;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:8px;scroll-snap-type:x mandatory;margin-inline:-4px;padding-inline:4px}
+    .tabs a{scroll-snap-align:start;padding:10px 12px;font-size:14px}
+    .tabs::-webkit-scrollbar{height:8px}
+    .tabs{scrollbar-width:thin}
+
+    .wrap{padding:14px}
+    .card{padding:12px;border-radius:14px}
+    .section-title{font-size:15px}
+
+    .cal-card{max-height:none}
+    .dow-row, .day-grid{grid-template-columns:repeat(7, minmax(36px,1fr));gap:4px}
+    .day{aspect-ratio:auto;height:42px;border-radius:10px}
+    .day .num{font-size:12px}
+    .games{max-height:52vh}
+
+    .game{flex-direction:column;align-items:flex-start;gap:6px}
+    .tv{align-self:flex-end}
+    .teams strong{font-size:14px}
+
+    .roster{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media (max-width: 420px){
+    .roster{grid-template-columns:1fr}
+    .toast{right:12px;bottom:calc(12px + env(safe-area-inset-bottom))}
+    .notif-pop, .inbox-pop{right:12px;width:min(100vw - 24px, 420px)}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>MFFL • Home</h1>
+    <nav class="tabs" aria-label="Primary">
+      <a class="active" href="/">Home</a>
+      <a href="/app/docs.html">About</a>
+      <a href="/app/teams.html">Spiff Bank</a>
+      <a href="/app/bracket.html">Bracket</a>
+      <a href="/app/cams.html">Cam’s Corner</a>
+    </nav>
+    <div class="header-right">
+      <!-- 💡 Suggest -->
+      <button id="suggestBtn" class="icon-btn" title="Submit a suggestion">💡</button>
+
+      <!-- 🔐 Commish unlock + 📥 inbox (inbox hidden until unlocked) -->
+      <button id="commishBtn" class="icon-btn" title="Commissioner unlock">🔐</button>
+      <button id="suggestInboxBtn" class="icon-btn" title="Suggestions inbox" style="display:none">📥</button>
+
+      <!-- 📥 Suggestions inbox popover -->
+      <div id="suggestInbox" class="inbox-pop" role="dialog" aria-label="Suggestions Inbox">
+        <div class="inbox-head">
+          <div style="font-weight:700">Suggestion Inbox</div>
+          <button id="inboxRefresh" class="btn" type="button">Refresh</button>
+        </div>
+        <div id="inboxList" class="inbox-list"><div class="muted" style="padding:10px">Loading…</div></div>
+      </div>
+
+      <!-- 🔔 Bell -->
+      <button id="bellBtn" class="bell-btn" aria-label="Activity">
+        &#128276;
+        <span id="bellDot" class="bell-dot" style="display:none">•</span>
+      </button>
+      <!-- Popover -->
+      <div id="notifPop" class="notif-pop" role="dialog" aria-label="Activity" aria-modal="false">
+        <div class="notif-head">
+          <div class="notif-title">Activity</div>
+          <button id="notifRefresh" class="btn" type="button">Refresh</button>
+        </div>
+        <div id="notifList" class="notif-list">
+          <div class="notif-empty">Loading…</div>
+        </div>
+      </div>
+
+      <form method="POST" action="/logout"><button class="btn" type="submit">Log out</button></form>
+    </div>
+  </header>
+
+  <!-- Floating peel CTA (sits over the background at far right) -->
+  <a class="cams-peel" href="/app/cams.html" aria-label="Open Cam’s Corner">
+    <div>
+      <div class="cams-kicker">Hot Picks &amp; Slips</div>
+      <div class="cams-title">Cam’s Corner →</div>
+      <div class="cams-sub">Tap to see today’s bets &amp; screenshots</div>
+    </div>
+  </a>
+
+  <div class="wrap grid">
+    <div class="left">
+      <section class="card">
+        <div class="section-title">
+          <span>📣 Announcements</span>
+          <div id="annAdmin" class="ann-actions" style="display:none">
+            <button id="annNewBtn" class="btn" type="button">New</button>
+          </div>
+        </div>
+        <div id="ann" class="ann-list"></div>
+      </section>
+
+      <section class="card cal-card">
+        <div class="cal">
+          <div class="cal-head">
+            <h2 id="calTitle">NFL Games</h2>
+            <div class="nav">
+              <button id="prevMonth" title="Previous month">‹</button>
+              <button id="todayBtn" title="Today">Today</button>
+              <button id="nextMonth" title="Next month">›</button>
+            </div>
+          </div>
+          <div class="dow-row">
+            <div class="dow">Sun</div><div class="dow">Mon</div><div class="dow">Tue</div>
+            <div class="dow">Wed</div><div class="dow">Thu</div><div class="dow">Fri</div><div class="dow">Sat</div>
+          </div>
+          <div id="dayGrid" class="day-grid"></div>
+          <div id="games" class="games"></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="section-title">
+        <span>🧑‍🤝‍🧑 League Roster</span>
+        <a href="/app/teams.html" class="btn">Open Teams</a>
+      </div>
+      <div id="roster" class="roster"></div>
+    </section>
+  </div>
+
+  <footer>© <span id="year"></span> MFFL. For friends only.</footer>
+
+<script>
+const tz = 'America/New_York';
+function fmtDate(d){ return new Intl.DateTimeFormat('en-US',{dateStyle:'medium', timeStyle:'short', timeZone: tz}).format(new Date(d)); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function ymdDash(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+function endOfMonth(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
+function initialAvatar(name, emoji){ if (emoji) return emoji; const initials=(name||'?').split(/\s+/).map(s=>s[0]||'').slice(0,2).join('').toUpperCase(); return initials||'🙂'; }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
+
+async function loadLeague(){
+  const res = await fetch('/api/league'); const data = await res.json();
+  document.title = (data.leagueName||'MFFL') + ' • Home';
+  renderAnnouncements(data.announcements||[]);
+
+  const roster = document.getElementById('roster');
+  roster.innerHTML = (data.roster||[]).map(m=>{
+    const initials = initialAvatar(m.manager, m.emoji);
+    const avatarUrl = m.avatarThumb || m.avatarFull || '';
+    const style = avatarUrl ? `style="background-image:url('${avatarUrl}');background-size:cover;background-position:center;color:transparent"` : '';
+    return `<div class="member">
+      <div class="avatar" ${style}>${initials}</div>
+      <div><div class="team">${escapeHtml(m.team||'Team')}</div><div class="muted">${escapeHtml(m.manager||'')}</div></div>
+    </div>`;
+  }).join('') || '<div class="muted">No members yet.</div>';
+}
+
+function renderAnnouncements(list){
+  const ann = document.getElementById('ann');
+  if (!list.length){ ann.innerHTML = '<div class="muted">No announcements yet.</div>'; return; }
+  list = list.slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
+  ann.innerHTML = list.map(a=>{
+    const id = a.id || '';
+    const delBtn = isCommish ? `<button class="btn ann-del" data-id="${id}" type="button" title="Delete">Delete</button>` : '';
+    const img = a.image
+      ? `<img src="${a.image}" alt="" loading="lazy" style="max-width:100%;border-radius:12px;border:1px solid var(--border);margin:8px 0">`
+      : '';
+    return `
+      <div class="ann" data-id="${id}">
+        <div class="ann-head">
+          <div>
+            <h3>${escapeHtml(a.title||'Announcement')}</h3>
+            <time class="muted">${fmtDate(a.date||Date.now())}</time>
+          </div>
+          ${delBtn}
+        </div>
+        ${img}
+        <div class="muted" style="margin-top:6px">${escapeHtml(a.body||'')}</div>
+      </div>`;
+  }).join('');
+}
+
+function formatCalTitle(dateObj){
+  if (window.matchMedia('(max-width: 480px)').matches){
+    return dateObj.toLocaleDateString('en-US',{weekday:'short', month:'short', day:'numeric'});
+  }
+  return new Intl.DateTimeFormat('en-US',{dateStyle:'full', timeZone: tz}).format(dateObj);
+}
+
+async function reloadAnnouncements(){
+  const res = await fetch('/api/league'); const data = await res.json();
+  renderAnnouncements(data.announcements||[]);
+}
+
+async function loadDayGames(dateObj){
+  const dateStr = ymdDash(dateObj);
+  const res = await fetch('/api/nfl/games?date='+dateStr);
+  const data = await res.json();
+  const wrap = document.getElementById('games');
+  const nice = formatCalTitle(dateObj);
+  document.getElementById('calTitle').textContent = `NFL Games • ${nice}`;
+
+  if (!data.games || data.games.length === 0) {
+    wrap.innerHTML = `<div class="muted">No NFL games on this day.</div>`;
+    return;
+  }
+  wrap.innerHTML = data.games.map(g=>{
+    const kickoff = new Date(g.startUTC).toLocaleTimeString('en-US',{timeZone: tz, hour:'numeric', minute:'2-digit'});
+    return `<div class="game"><div class="teams">
+      <strong>${g.away.abbrev || g.away.name}</strong> @ <strong>${g.home.abbrev || g.home.name}</strong>
+      <span class="muted" style="margin-left:8px">${kickoff} ET</span></div>
+      <div class="tv">${g.network ? g.network : ''}</div></div>`;
+  }).join('');
+}
+
+function buildCalendar(activeDate=new Date()){
+  const grid = document.getElementById('dayGrid');
+  const monthStart = startOfMonth(activeDate);
+  const monthEnd = endOfMonth(activeDate);
+  const startWeekday = monthStart.getDay();
+  const today = new Date(); const todayKey = today.getFullYear()+String(today.getMonth()+1).padStart(2,'0')+String(today.getDate()).padStart(2,'0');
+
+  const cells = [];
+  for(let i=0;i<startWeekday;i++) cells.push('<div></div>');
+  for(let d=1; d<=monthEnd.getDate(); d++){
+    const cur = new Date(activeDate.getFullYear(), activeDate.getMonth(), d);
+    const curKey = cur.getFullYear()+String(cur.getMonth()+1).padStart(2,'0')+String(cur.getDate()).padStart(2,'0');
+    const isToday = curKey === todayKey;
+    const label = cur.toLocaleDateString('en-US',{weekday:'short', month:'short', day:'numeric'});
+    cells.push(`<div class="day ${isToday?'today':''}"><span class="num">${d}</span>
+      <button data-date="${cur.toISOString()}" aria-label="View games for ${label}" title="View games for ${label}"></button></div>`);
+  }
+  grid.innerHTML = cells.join('');
+
+  grid.querySelectorAll('button[data-date]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      grid.querySelectorAll('.day.selected').forEach(d=>d.classList.remove('selected'));
+      btn.parentElement.classList.add('selected');
+      loadDayGames(new Date(btn.dataset.date));
+    }, {passive:true});
+  });
+
+  const todayBtn = grid.querySelector('.day.today > button');
+  if (todayBtn) todayBtn.parentElement.classList.add('selected');
+  loadDayGames(today);
+}
+
+/* ===================== Notifications UI ===================== */
+const bellBtn = document.getElementById('bellBtn');
+const bellDot = document.getElementById('bellDot');
+const notifPop = document.getElementById('notifPop');
+const notifList = document.getElementById('notifList');
+const notifRefresh = document.getElementById('notifRefresh');
+let notifLoaded = false;
+
+function timeAgo(iso){
+  const s = Math.floor((Date.now() - new Date(iso).getTime())/1000);
+  const m = Math.floor(s/60), h = Math.floor(m/60), d = Math.floor(h/24);
+  if (d>0) return d+'d ago'; if (h>0) return h+'h ago'; if (m>0) return m+'m ago'; return 'just now';
+}
+function avatarDiv(team){
+  const url = team?.avatarThumb;
+  if (url) return `<div class="av hasimg" style="background-image:url('${url}')">.</div>`;
+  const init = (team?.team||'?').split(/\s+/).map(s=>s[0]||'').slice(0,2).join('').toUpperCase() || '🙂';
+  return `<div class="av">${init}</div>`;
+}
+function describeTx(t){
+  const tlabel = ({waiver:'waiver', free_agent:'free agent', trade:'trade', draft:'draft'}[t.type]) || t.type;
+  if (t.type==='trade' && t.rosters?.length>=2){
+    const a=t.rosters[0]?.team, b=t.rosters[1]?.team;
+    return `<strong>${a}</strong> ↔ <strong>${b}</strong> completed a trade.`;
+  }
+  const add = t.adds?.[0];
+  const drop = t.drops?.[0];
+  if (add && drop){
+    return `<strong>${add.to.team}</strong> added <strong>${add.name}</strong> and dropped <strong>${drop.name}</strong> (${tlabel}).`;
+  }
+  if (add){
+    return `<strong>${add.to.team}</strong> added <strong>${add.name}</strong> (${tlabel})${t.waiver_bid?` for $${t.waiver_bid}`:''}.`;
+  }
+  if (drop){
+    return `<strong>${drop.from.team}</strong> dropped <strong>${drop.name}</strong>.`;
+  }
+  return `${t.type} activity.`;
+}
+
+/* -------- Mobile popover placement helper -------- */
+function positionPopover(pop, anchorBtn){
+  const isMobile = window.matchMedia('(max-width:700px)').matches;
+  if (!isMobile) {
+    // desktop/tablet: reset to CSS-driven absolute in header
+    pop.style.position = '';
+    pop.style.left = '';
+    pop.style.right = '0';
+    pop.style.top = '';
+    pop.style.width = '';
+    pop.style.maxHeight = '';
+    return;
+  }
+  const headerRect = document.querySelector('header').getBoundingClientRect();
+  const top = headerRect.bottom + 8 + window.scrollY;
+
+  const popW = Math.min(window.innerWidth - 24, 420);
+  const btnRect = anchorBtn.getBoundingClientRect();
+  let left = btnRect.right - popW; // align right edge with button
+  left = Math.max(12, Math.min(left, window.innerWidth - 12 - popW));
+
+  pop.style.position = 'fixed';
+  pop.style.top = `${top}px`;
+  pop.style.left = `${left}px`;
+  pop.style.right = 'auto';
+  pop.style.width = `${popW}px`;
+  const bodyPad = parseInt(getComputedStyle(document.body).paddingBottom) || 0;
+  pop.style.maxHeight = `${window.innerHeight - (top - window.scrollY) - 16 - bodyPad}px`;
+}
+
+async function loadNotifications(force=false){
+  if (notifLoaded && !force) return;
+  notifList.innerHTML = `<div class="notif-empty">Loading…</div>`;
+  try{
+    const r = await fetch('/api/sleeper/transactions');
+    const data = await r.json();
+    const items = (data.items||[]);
+    bellDot.style.display = items.length ? '' : 'none';
+    if (!items.length){
+      notifList.innerHTML = `<div class="notif-empty">No recent activity.</div>`;
+      notifLoaded = true; return;
+    }
+    notifList.innerHTML = items.map(t=>{
+      const team = (t.rosters&&t.rosters[0]) || null;
+      return `<div class="notif-item">
+        ${avatarDiv(team)}
+        <div>
+          <div>${describeTx(t)}</div>
+          <div class="notif-meta">${timeAgo(t.when)} • Week ${t.round}</div>
+        </div>
+      </div>`;
+    }).join('');
+    notifLoaded = true;
+  }catch(e){
+    notifList.innerHTML = `<div class="notif-empty">Could not load activity.</div>`;
+  }
+}
+function toggleNotif(){
+  const open = notifPop.style.display === 'block';
+  if (open){
+    notifPop.style.display = 'none';
+  }else{
+    notifPop.style.display = 'block';
+    positionPopover(notifPop, bellBtn);    // <-- place on open (mobile)
+    loadNotifications(false);
+  }
+}
+bellBtn.addEventListener('click', (e)=>{ e.stopPropagation(); toggleNotif(); });
+notifRefresh.addEventListener('click', (e)=>{ e.stopPropagation(); notifLoaded=false; loadNotifications(true); });
+document.addEventListener('click', (e)=>{
+  if (notifPop.style.display==='block' && !notifPop.contains(e.target) && e.target!==bellBtn){
+    notifPop.style.display='none';
+  }
+});
+
+/* ================= Suggestion Box + Commish ================= */
+const modalBackdrop = document.getElementById('modalBackdrop') || (function(){
+  const el = document.createElement('div'); el.id='modalBackdrop'; el.className='modal-backdrop'; document.body.appendChild(el); return el;
+})();
+const suggestModal = document.getElementById('suggestModal');
+const commishModal = document.getElementById('commishModal');
+
+const suggestBtn = document.getElementById('suggestBtn');
+const commishBtn = document.getElementById('commishBtn');
+const inboxBtn   = document.getElementById('suggestInboxBtn');
+const inboxPop   = document.getElementById('suggestInbox');
+const inboxList  = document.getElementById('inboxList');
+const inboxRefresh = document.getElementById('inboxRefresh');
+
+function ensureModal(id, html){
+  if (!document.getElementById(id)) {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    document.body.appendChild(div);
+  }
+}
+ensureModal('suggestModal', `
+<div id="suggestModal" class="modal" role="dialog" aria-label="Submit a suggestion">
+  <div class="hd">
+    <div style="font-weight:700">Submit a suggestion</div>
+    <button class="btn ghost" type="button" onclick="(document.getElementById('suggestModal').style.display='none', document.getElementById('modalBackdrop').style.display='none')">✕</button>
+  </div>
+  <form id="suggestForm" class="bd">
+    <input class="input" name="name" placeholder="Your name (optional)"/>
+    <textarea class="textarea" name="text" placeholder="Your suggestion…" required></textarea>
+    <div class="row">
+      <button class="btn ghost" type="button" onclick="(document.getElementById('suggestModal').style.display='none', document.getElementById('modalBackdrop').style.display='none')">Cancel</button>
+      <button class="btn" type="submit">Send</button>
+    </div>
+  </form>
+</div>`);
+ensureModal('commishModal', `
+<div id="commishModal" class="modal" role="dialog" aria-label="Commissioner unlock">
+  <div class="hd">
+    <div style="font-weight:700">Commissioner unlock</div>
+    <button class="btn ghost" type="button" onclick="(document.getElementById('commishModal').style.display='none', document.getElementById('modalBackdrop').style.display='none')">✕</button>
+  </div>
+  <form id="commishForm" class="bd">
+    <input class="input" name="commish_password" type="password" placeholder="Commissioner password" required/>
+    <div class="row">
+      <button class="btn ghost" type="button" onclick="(document.getElementById('commishModal').style.display='none', document.getElementById('modalBackdrop').style.display='none')">Cancel</button>
+      <button class="btn" type="submit">Unlock</button>
+    </div>
+  </form>
+</div>`);
+ensureModal('annModal', `
+<div id="annModal" class="modal" role="dialog" aria-label="New announcement">
+  <div class="hd">
+    <div style="font-weight:700">New announcement</div>
+    <button class="btn ghost" type="button" onclick="(document.getElementById('annModal').style.display='none', document.getElementById('modalBackdrop').style.display='none')">✕</button>
+  </div>
+  <form id="annForm" class="bd" enctype="multipart/form-data">
+    <input class="input" name="title" placeholder="Title" required/>
+    <textarea class="textarea" name="body" placeholder="Write your announcement…" required></textarea>
+
+    <!-- NEW: optional image -->
+    <input class="input" type="file" name="image" accept="image/*"/>
+    <div id="annImgName" class="muted" style="font-size:12px;"></div>
+
+    <div class="row">
+      <button class="btn ghost" type="button" onclick="(document.getElementById('annModal').style.display='none', document.getElementById('modalBackdrop').style.display='none')">Cancel</button>
+      <button class="btn" type="submit">Publish</button>
+    </div>
+  </form>
+</div>`);
+
+
+if (!document.getElementById('toast')){
+  const t = document.createElement('div'); t.id='toast'; t.className='toast'; document.body.appendChild(t);
+}
+
+const suggestForm = document.getElementById('suggestForm');
+const commishForm = document.getElementById('commishForm');
+const annForm = document.getElementById('annForm');
+const toastEl = document.getElementById('toast');
+let isCommish = false;
+
+function showToast(msg){
+  toastEl.textContent = msg;
+  toastEl.style.display = 'block';
+  setTimeout(()=> toastEl.style.display='none', 2200);
+}
+function openModal(el){ modalBackdrop.style.display='block'; el.style.display='block'; }
+function closeModal(el){ el.style.display='none'; modalBackdrop.style.display='none'; }
+
+suggestBtn.addEventListener('click', ()=> openModal(document.getElementById('suggestModal')));
+commishBtn.addEventListener('click', ()=> openModal(document.getElementById('commishModal')));
+modalBackdrop.addEventListener('click', ()=>{ closeModal(document.getElementById('suggestModal')); closeModal(document.getElementById('commishModal')); closeModal(document.getElementById('annModal')); });
+
+suggestForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const fd = new FormData(suggestForm);
+  const payload = { name: fd.get('name')||'', text: fd.get('text')||'' };
+  try{
+    const r = await fetch('/api/suggestions', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(payload) });
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.error || 'Failed');
+    suggestForm.reset();
+    closeModal(document.getElementById('suggestModal'));
+    showToast('Suggestion submitted. Thanks!');
+  }catch{ showToast('Could not submit suggestion.'); }
+});
+
+commishForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const fd = new FormData(commishForm);
+  try{
+    const r = await fetch('/commish-login', {
+      method:'POST',
+      headers:{ 'content-type':'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ commish_password: fd.get('commish_password') })
+    });
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.error || 'Failed');
+    isCommish = true;
+    updateCommishUI();
+    closeModal(document.getElementById('commishModal'));
+    showToast('Commissioner unlocked.');
+    await loadInbox(true);
+  }catch{ showToast('Invalid commissioner password.'); }
+});
+
+annForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const fd = new FormData(annForm);
+  try{
+    const r = await fetch('/api/announcements', { method: 'POST', body: fd });
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.error || 'Failed');
+    annForm.reset();
+    document.getElementById('annImgName').textContent = '';
+    closeModal(document.getElementById('annModal'));
+    showToast('Announcement published.');
+    reloadAnnouncements();
+  }catch{
+    showToast('Could not publish announcement.');
+  }
+});
+
+// Optional: show selected filename under the input
+const annImageInput = document.querySelector('#annForm input[name="image"]');
+if (annImageInput){
+  annImageInput.addEventListener('change', ()=>{
+    const f = annImageInput.files && annImageInput.files[0];
+    document.getElementById('annImgName').textContent = f ? `Selected: ${f.name}` : '';
+  });
+}
+
+async function loadInbox(force=false){
+  if (!isCommish) return;
+  if (force) inboxList.innerHTML = '<div class="muted" style="padding:10px">Loading…</div>';
+  try{
+    const r = await fetch('/api/suggestions'); const data = await r.json();
+    if (!r.ok) throw new Error();
+    const items = data.items || [];
+    if (!items.length){
+      inboxList.innerHTML = '<div class="muted" style="padding:10px">No suggestions yet.</div>';
+      return;
+    }
+    inboxList.innerHTML = items.map(s => `
+      <div class="inbox-item">
+        <div class="inbox-when">${new Date(s.when).toLocaleString()}</div>
+        <div style="margin-top:6px">${(s.name ? `<strong>${escapeHtml(s.name)}</strong>: ` : '')}${escapeHtml(s.text||'')}</div>
+      </div>`).join('');
+  }catch{
+    inboxList.innerHTML = '<div class="muted" style="padding:10px">Could not load suggestions.</div>';
+  }
+}
+function updateCommishUI(){
+  const inboxBtn = document.getElementById('suggestInboxBtn');
+  if (inboxBtn) inboxBtn.style.display = isCommish ? '' : 'none';
+  const annAdmin = document.getElementById('annAdmin');
+  if (annAdmin) annAdmin.style.display = isCommish ? '' : 'none';
+}
+
+/* Open/close inbox with mobile placement */
+inboxBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  const open = inboxPop.style.display === 'block';
+  inboxPop.style.display = open ? 'none' : 'block';
+  if (!open) {
+    positionPopover(inboxPop, inboxBtn);  // <-- place on open (mobile)
+    loadInbox(true);
+  }
+});
+inboxRefresh.addEventListener('click', (e)=>{ e.stopPropagation(); loadInbox(true); });
+document.addEventListener('click', (e)=>{
+  if (inboxPop.style.display === 'block' && !inboxPop.contains(e.target) && e.target !== inboxBtn) {
+    inboxPop.style.display = 'none';
+  }
+});
+
+document.getElementById('ann').addEventListener('click', async (e)=>{
+  const btn = e.target.closest('.ann-del');
+  if (!btn) return;
+  const id = btn.getAttribute('data-id');
+  if (!id) return;
+  if (!confirm('Delete this announcement?')) return;
+  try{
+    const r = await fetch('/api/announcements/' + encodeURIComponent(id), { method:'DELETE' });
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.error || 'Failed');
+    showToast('Announcement deleted.');
+    reloadAnnouncements();
+  }catch{ showToast('Could not delete announcement.'); }
+});
+
+document.getElementById('annNewBtn').addEventListener('click', ()=>{
+  if (!isCommish) return;
+  openModal(document.getElementById('annModal'));
+});
+
+(async function checkMe(){
+  try{ const r = await fetch('/api/me'); const me = await r.json(); isCommish = !!me.is_commish; updateCommishUI(); }catch{}
+})();
+
+/* Reposition open popovers on rotate/resize */
+window.addEventListener('resize', ()=>{
+  if (getComputedStyle(notifPop).display === 'block') positionPopover(notifPop, bellBtn);
+  if (getComputedStyle(inboxPop).display === 'block') positionPopover(inboxPop, inboxBtn);
+}, { passive: true });
+
+(function init(){
+  document.getElementById('year').textContent = new Date().getFullYear();
+  loadLeague().then(()=>buildCalendar(new Date()));
+  document.getElementById('todayBtn').onclick = ()=>buildCalendar(new Date());
+  let stateDate = new Date();
+  document.getElementById('prevMonth').onclick = ()=>{ stateDate = new Date(stateDate.getFullYear(), stateDate.getMonth()-1, 1); buildCalendar(stateDate); };
+  document.getElementById('nextMonth').onclick = ()=>{ stateDate = new Date(stateDate.getFullYear(), stateDate.getMonth()+1, 1); buildCalendar(stateDate); };
+})();
+</script>
+
+<!-- Modals/backdrop/toast are created dynamically if missing, so no extra markup needed here -->
+</body>
+</html>

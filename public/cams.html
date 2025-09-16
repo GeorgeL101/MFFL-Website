@@ -1,0 +1,281 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Cam’s Corner</title>
+<style>
+  :root{ --bg:#0b1220; --panel:#121a2b; --border:#1e2a44; --text:#e6e9f2; --muted:#9fb0d2; --accent:#22c55e; --sub:#7dd3fc; }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(180deg,#0b1220,#0d1425 40%);color:var(--text);font:15px system-ui,Segoe UI,Roboto,Arial;padding-bottom:env(safe-area-inset-bottom)}
+
+  /* ===== Header ===== */
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border);backdrop-filter:blur(6px);position:sticky;top:0;z-index:10;gap:12px}
+  h1{font-size:20px;margin:0}
+  .tabs{display:flex;gap:10px;align-items:center}
+  .tabs a{display:inline-block;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#0e1728;color:#cfe2ff;text-decoration:none;white-space:nowrap}
+  .tabs a.active{background:#14213b;border-color:#2b3a5e}
+  .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+  .wrap{max-width:1200px;margin:0 auto;padding:20px}
+
+  .toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;margin:0 0 14px;flex-wrap:wrap}
+  .btn{border:1px solid var(--border);background:#0e1728;color:#cfe2ff;padding:8px 10px;border-radius:10px;cursor:pointer;min-height:40px;touch-action:manipulation}
+  .btn[disabled]{opacity:.55;cursor:not-allowed}
+  .muted{color:var(--muted)}
+
+  /* ===== Grid & cards ===== */
+  .grid{display:grid;grid-template-columns: repeat(12, 1fr); gap:16px; align-items:start}
+  .block{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);grid-column: span 6; position:relative}
+  .block.full{grid-column: span 12}
+  .block.dragging{opacity:.6; outline:2px dashed var(--sub)}
+  .block h3{margin:0 0 6px}
+  .meta{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .img{width:100%;border-radius:12px;border:1px solid var(--border);display:block}
+  .cap{font-size:12px;color:var(--muted);margin-top:6px}
+
+  /* Cam-only controls on each card (width / delete) */
+  .controls{position:absolute;top:8px;right:8px;display:none;gap:6px}
+  .block.editable .controls{display:flex}
+  .chip{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:#0e1728;cursor:pointer;min-height:32px}
+  .chip.danger{border-color:#3a2630;background:#2a1320}
+
+  /* ===== Modals ===== */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:40}
+  .modal{position:fixed;left:50%;top:16%;transform:translateX(-50%);width:min(92vw,560px);background:#0c1426;border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.45);display:none;z-index:41}
+  .modal .hd{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border)}
+  .modal .bd{padding:12px 14px;display:grid;gap:10px}
+  .input, .textarea{border:1px solid var(--border);background:#0e1728;color:#e6e9f2;border-radius:10px;padding:10px}
+  .textarea{min-height:140px;resize:vertical}
+  .row{display:flex;gap:10px;align-items:center;justify-content:flex-end}
+  .btn.ghost{background:transparent}
+
+  .toast{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));background:#10203a;color:#e6e9f2;border:1px solid var(--border);border-radius:12px;padding:10px 12px;box-shadow:0 10px 24px rgba(0,0,0,.35);z-index:60;display:none}
+
+  /* ===== Cam’s Corner banner — responsive strip ===== */
+  .cams-hero{margin:16px auto 14px;max-width:1200px;padding:0 20px}
+  .cams-hero .banner{border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:0 16px 36px rgba(0,0,0,.35)}
+  .cams-hero .banner img{display:block;width:100%;height:clamp(140px,26vw,240px);object-fit:cover;object-position:center 45%}
+
+  /* ===== Mobile tweaks ===== */
+  @media (max-width:900px){ .block{grid-column: span 12} }
+  @media (max-width:700px){
+    header{flex-wrap:wrap;gap:8px 10px;padding:12px 14px}
+    h1{font-size:18px;order:1}
+    .header-right{order:2}
+    .tabs{order:3;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:8px;scroll-snap-type:x mandatory;margin-inline:-4px;padding-inline:4px}
+    .tabs a{scroll-snap-align:start;padding:10px 12px;font-size:14px}
+    .tabs::-webkit-scrollbar{height:8px}
+    .tabs{scrollbar-width:thin}
+
+    .wrap{padding:14px}
+    .toolbar{gap:8px}
+  }
+  @media (max-width:420px){
+    .controls{top:6px;right:6px}
+    .chip{padding:5px 9px}
+    .cams-hero{padding:0 14px}
+    .toast{right:12px}
+  }
+
+  /* Prefer reduced motion */
+  @media (prefers-reduced-motion: reduce){
+    *{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Cam’s Corner</h1>
+    <nav class="tabs" aria-label="Primary">
+      <a href="/">Home</a>
+      <a href="/app/docs.html">About</a>
+      <a href="/app/teams.html">Spiff Bank</a>
+      <a href="/app/bracket.html">Bracket</a>
+      <a class="active" href="/app/cams.html">Cam’s Corner</a>
+    </nav>
+    <div class="header-right">
+      <button id="camUnlockBtn" class="btn" aria-label="Cam unlock">🔑 Cam Unlock</button>
+      <form method="POST" action="/logout" style="display:inline"><button class="btn" type="submit">Log out</button></form>
+    </div>
+  </header>
+
+  <!-- Banner -->
+  <div class="cams-hero">
+    <div class="banner">
+      <img
+        src="img/cams-corner-banner.png"
+        alt="Cam’s Corner"
+        loading="eager"
+        fetchpriority="high"
+        width="1600"
+        height="600"
+      />
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="toolbar" role="group" aria-label="Cam tools">
+      <div class="muted">Hot picks, slips & screenshots</div>
+      <div id="editorBar" style="display:none">
+        <button id="toggleEdit" class="btn" aria-label="Toggle edit layout">Edit layout</button>
+        <button id="newPost" class="btn" aria-label="Create new post">New post</button>
+        <button id="newImage" class="btn" aria-label="Upload image">Upload image</button>
+        <button id="saveLayout" class="btn" aria-label="Save layout" disabled>Save</button>
+      </div>
+    </div>
+
+    <div id="grid" class="grid"></div>
+  </div>
+
+  <!-- Modals -->
+  <div id="backdrop" class="modal-backdrop"></div>
+
+  <div id="loginModal" class="modal" role="dialog" aria-label="Cam unlock">
+    <div class="hd"><strong>Cam unlock</strong><button class="btn ghost" onclick="closeModal('loginModal')">✕</button></div>
+    <form id="loginForm" class="bd">
+      <input class="input" name="cam_password" type="password" placeholder="Cam password" required/>
+      <div class="row">
+        <button class="btn ghost" type="button" onclick="closeModal('loginModal')">Cancel</button>
+        <button class="btn" type="submit">Unlock</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="postModal" class="modal" role="dialog" aria-label="New post">
+    <div class="hd"><strong>New post</strong><button class="btn ghost" onclick="closeModal('postModal')">✕</button></div>
+    <form id="postForm" class="bd">
+      <input class="input" name="title" placeholder="Title"/>
+      <textarea class="textarea" name="body" placeholder="Write your post…" required></textarea>
+      <div class="row">
+        <button class="btn ghost" type="button" onclick="closeModal('postModal')">Cancel</button>
+        <button class="btn" type="submit">Publish</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="imgModal" class="modal" role="dialog" aria-label="Upload image">
+    <div class="hd"><strong>Upload image</strong><button class="btn ghost" onclick="closeModal('imgModal')">✕</button></div>
+    <form id="imgForm" class="bd" enctype="multipart/form-data">
+      <input class="input" name="caption" placeholder="Caption (optional)"/>
+      <input class="input" name="image" type="file" accept="image/*" required/>
+      <div class="row">
+        <button class="btn ghost" type="button" onclick="closeModal('imgModal')">Cancel</button>
+        <button class="btn" type="submit">Upload</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+const grid = document.getElementById('grid');
+const editorBar = document.getElementById('editorBar');
+const saveBtn = document.getElementById('saveLayout');
+const toggleBtn = document.getElementById('toggleEdit');
+const newPostBtn = document.getElementById('newPost');
+const newImgBtn  = document.getElementById('newImage');
+const camUnlockBtn = document.getElementById('camUnlockBtn');
+
+let isCam = false;
+let editMode = false;
+let dragEl = null;
+
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;' }[c])); }
+function nl2br(s){ return escapeHtml(s).replace(/\n/g,'<br>'); }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2000); }
+
+function openModal(id){ document.getElementById('backdrop').style.display='block'; document.getElementById(id).style.display='block'; }
+function closeModal(id){ document.getElementById(id).style.display='none'; document.getElementById('backdrop').style.display='none'; }
+
+// Close on ESC and click backdrop
+window.addEventListener('keydown', (e)=>{ if (e.key==='Escape'){ ['loginModal','postModal','imgModal'].forEach(m=>{ const el=document.getElementById(m); if (el&&el.style.display==='block') closeModal(m); }); } }, {passive:true});
+document.getElementById('backdrop').addEventListener('click', ()=>{ ['loginModal','postModal','imgModal'].forEach(m=>{ const el=document.getElementById(m); if (el&&el.style.display==='block') closeModal(m); }); });
+
+async function me(){
+  try{ const r = await fetch('/api/me'); const j = await r.json(); return j; }catch{ return {}; }
+}
+
+function blockHTML(b){
+  const spanClass = (b.span === 12) ? ' full' : '';
+  if (b.type === 'image') {
+    return `
+      <figure class="block${spanClass}" data-id="${b.id}" draggable="false">
+        <div class="controls">
+          <button class="chip width" aria-label="Toggle width">Width: ${b.span===12?'Full':'Half'}</button>
+          <button class="chip danger del" aria-label="Delete block">Delete</button>
+        </div>
+        <img class="img" src="${escapeHtml(b.url)}" alt="" loading="lazy" decoding="async" sizes="(max-width:700px) 100vw, (max-width:1200px) 50vw, 600px"/>
+        ${b.caption ? `<figcaption class="cap">${escapeHtml(b.caption)}</figcaption>` : ''}
+      </figure>`;
+  }
+  return `
+    <article class="block${spanClass}" data-id="${b.id}" draggable="false">
+      <div class="controls">
+        <button class="chip width" aria-label="Toggle width">Width: ${b.span===12?'Full':'Half'}</button>
+        <button class="chip danger del" aria-label="Delete block">Delete</button>
+      </div>
+      <h3>${escapeHtml(b.title || 'Post')}</h3>
+      ${b.when ? `<div class="meta">${new Date(b.when).toLocaleString()}</div>`:''}
+      <div>${nl2br(b.body||'')}</div>
+    </article>`;
+}
+
+function applyEditability(){
+  grid.querySelectorAll('.block').forEach(el=>{
+    if (editMode){ el.classList.add('editable'); el.setAttribute('draggable','true'); }
+    else{ el.classList.remove('editable'); el.setAttribute('draggable','false'); }
+  });
+  saveBtn.disabled = true;
+}
+
+async function load(){
+  const r = await fetch('/api/cams'); const data = await r.json();
+  grid.innerHTML = (data.items||[]).map(blockHTML).join('') || `<div class="muted">No posts yet.</div>`;
+  applyEditability();
+}
+
+function currentOrder(){ return Array.from(grid.querySelectorAll('.block')).map(el=>el.dataset.id); }
+function sizesMap(){ const out = {}; grid.querySelectorAll('.block').forEach(el=>{ out[el.dataset.id] = el.classList.contains('full') ? 12 : 6; }); return out; }
+
+/* drag & drop (reorder) */
+grid.addEventListener('dragstart', e=>{
+  if (!editMode) return; const el = e.target.closest('.block'); if (!el) return; dragEl = el; el.classList.add('dragging');
+});
+grid.addEventListener('dragend', ()=>{ if (dragEl) dragEl.classList.remove('dragging'); dragEl = null; });
+grid.addEventListener('dragover', e=>{
+  if (!editMode || !dragEl) return; e.preventDefault();
+  const blocks = [...grid.querySelectorAll('.block:not(.dragging)')];
+  const after = blocks.find(el=>{ const rect = el.getBoundingClientRect(); return e.clientY < rect.top + rect.height/2; });
+  if (after) grid.insertBefore(dragEl, after); else grid.appendChild(dragEl);
+  saveBtn.disabled = false;
+});
+
+/* per-card actions (width toggle / delete) */
+grid.addEventListener('click', async (e)=>{
+  if (!editMode) return; const el = e.target.closest('.block'); if (!el) return;
+  if (e.target.classList.contains('width')){ el.classList.toggle('full'); e.target.textContent = 'Width: ' + (el.classList.contains('full') ? 'Full' : 'Half'); saveBtn.disabled = false; }
+  if (e.target.classList.contains('del')){ if (!confirm('Delete this block?')) return; const id = el.dataset.id; try{ const r = await fetch('/api/cams/blocks/' + encodeURIComponent(id), { method: 'DELETE' }); const j = await r.json(); if (!r.ok || !j.ok) throw new Error(); el.remove(); saveBtn.disabled = false; showToast('Deleted.'); }catch{ showToast('Delete failed.'); } }
+});
+
+/* editor bar */
+toggleBtn.addEventListener('click', ()=>{ editMode = !editMode; toggleBtn.textContent = editMode ? 'Done editing' : 'Edit layout'; applyEditability(); });
+saveBtn.addEventListener('click', async ()=>{ const payload = { order: currentOrder(), sizes: sizesMap() }; try{ const r = await fetch('/api/cams/layout', { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) }); const j = await r.json(); if (!r.ok || !j.ok) throw new Error(); saveBtn.disabled = true; showToast('Layout saved.'); }catch{ showToast('Save failed.'); } });
+
+/* create post */
+newPostBtn.addEventListener('click', ()=> openModal('postModal'));
+document.getElementById('postForm').addEventListener('submit', async (e)=>{ e.preventDefault(); const fd = new FormData(e.target); const payload = { type:'post', title: fd.get('title')||'', body: fd.get('body')||'' }; try{ const r = await fetch('/api/cams/blocks', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) }); const j = await r.json(); if (!r.ok || !j.ok) throw new Error(); closeModal('postModal'); e.target.reset(); await load(); showToast('Published.'); }catch{ showToast('Could not publish.'); } });
+
+/* upload image */
+newImgBtn.addEventListener('click', ()=> openModal('imgModal'));
+document.getElementById('imgForm').addEventListener('submit', async (e)=>{ e.preventDefault(); const fd = new FormData(e.target); try{ const r = await fetch('/api/cams/blocks', { method:'POST', body: fd }); const j = await r.json(); if (!r.ok || !j.ok) throw new Error(); closeModal('imgModal'); e.target.reset(); await load(); showToast('Uploaded.'); }catch{ showToast('Upload failed.'); } });
+
+/* cam unlock */
+camUnlockBtn.addEventListener('click', ()=> openModal('loginModal'));
+document.getElementById('loginForm').addEventListener('submit', async (e)=>{ e.preventDefault(); const fd = new FormData(e.target); try{ const r = await fetch('/cam-login', { method:'POST', headers:{ 'content-type':'application/x-www-form-urlencoded' }, body: new URLSearchParams({ cam_password: fd.get('cam_password') }) }); const j = await r.json(); if (!r.ok || !j.ok) throw new Error(); isCam = true; editorBar.style.display = ''; camUnlockBtn.style.display = 'none'; closeModal('loginModal'); showToast('Cam unlocked.'); }catch{ showToast('Bad password.'); } });
+
+/* init */
+(async function init(){ const m = await me(); isCam = !!m.is_cam; if (isCam){ editorBar.style.display=''; camUnlockBtn.style.display='none'; } await load(); })();
+</script>
+</body>
+</html>

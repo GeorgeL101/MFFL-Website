@@ -1,0 +1,59 @@
+{
+  "leagueName": "MFFL",
+  "announcements": [
+    {
+      "id": "Punishment-2023",
+      "title": "Punishments are in!",
+      "body": "Jack-Host 2026 Draft Party",
+      "date": "2025-09-09T09:30:00-04:00"
+    },
+    {
+      "id": "Punishment 2024",
+      "title": "Punishments are in!",
+      "body": "Sam-wears a dress to golf in for the punishment year of 2024",
+      "date": "2025-09-01T18:00:00-04:00"
+    }
+  ],
+  "roster": [
+    {
+      "manager": "George Lucas",
+      "team": "Monkey Land",
+      "emoji": "🐵"
+    },
+    {
+      "manager": "Alex",
+      "team": "Blitz Brigade",
+      "emoji": "⚡"
+    },
+    {
+      "manager": "Taylor",
+      "team": "Endzone Empire",
+      "emoji": "👑"
+    },
+    {
+      "manager": "Sam",
+      "team": "Goal Line Stand",
+      "emoji": "🛡️"
+    },
+    {
+      "manager": "Jordan",
+      "team": "YAC Attack",
+      "emoji": "🏃"
+    },
+    {
+      "manager": "Casey",
+      "team": "Fourth & Win",
+      "emoji": "4️⃣"
+    },
+    {
+      "manager": "Riley",
+      "team": "Hot Route",
+      "emoji": "🔥"
+    },
+    {
+      "manager": "Morgan",
+      "team": "Two-Minute Drill",
+      "emoji": "⏱️"
+    }
+  ]
+}

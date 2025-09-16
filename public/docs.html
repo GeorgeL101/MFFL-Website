@@ -1,0 +1,561 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>MFFL • Docs</title>
+<style>
+  :root{ --bg:#0b1220; --panel:#121a2b; --border:#1e2a44; --text:#e6e9f2; --muted:#9fb0d2; --accent:#22c55e; --sub:#7dd3fc; }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(180deg,#0b1220,#0d1425 40%);color:var(--text);font:15px system-ui,Segoe UI,Roboto,Arial;padding-bottom:env(safe-area-inset-bottom)}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border);backdrop-filter:blur(6px);position:sticky;top:0;z-index:10;gap:12px}
+  h1{font-size:20px;margin:0}
+  .tabs{display:flex;gap:10px;align-items:center}
+  .tabs a{display:inline-block;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#0e1728;color:#cfe2ff;text-decoration:none;white-space:nowrap}
+  .tabs a.active{background:#14213b;border-color:#2b3a5e}
+  .wrap{max-width:1200px;margin:0 auto;padding:20px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .section-title{display:flex;align-items:center;justify-content:space-between;margin:0 0 10px;font-size:16px;color:#fff}
+  .muted{color:var(--muted)}
+  .btn{border:1px solid var(--border);background:#0e1728;color:#cfe2ff;padding:8px 10px;border-radius:10px;cursor:pointer;min-height:36px;touch-action:manipulation}
+  .btn.ghost{background:transparent}
+  .btn[disabled]{opacity:.55;cursor:not-allowed}
+  .header-right{display:flex;align-items:center;gap:10px; position:relative;}
+
+  /* ===== Doc layout ===== */
+  .doc-grid{display:grid;grid-template-columns:1fr 0.9fr;gap:16px;align-items:start}
+  .col-left, .col-right{display:grid;gap:16px;align-content:start}
+  @media (max-width:900px){
+    .doc-grid{grid-template-columns:1fr}
+    .col-right{order:-1} /* show spiffs earlier on phones if you want, remove this line to keep order */
+  }
+
+  /* Sticky spiffs on desktop */
+  .spiffs.sticky{position:sticky;top:84px}
+  @media (max-width:900px){ .spiffs.sticky{position:static} }
+
+  /* Editable states */
+  [data-editable]{outline:0; transition:box-shadow .15s ease, background-color .15s ease}
+  body.editing [data-editable]{box-shadow:0 0 0 2px rgba(125,211,252,.25) inset;background:rgba(20,33,59,.35)}
+  .editbar{display:none;gap:8px}
+  body.is-commish .editbar{display:flex}
+
+  /* Typographic niceties */
+  .lead{font-size:15px;line-height:1.6}
+  .kicker{font-size:12px;color:var(--muted);letter-spacing:.02em;text-transform:uppercase}
+  .bullets{margin:8px 0 0 0;padding-left:18px}
+  .bullets li{margin:6px 0}
+  .money{font-weight:700}
+  .tag{display:inline-block;font-size:11px;border:1px solid var(--border);background:#0e1728;border-radius:999px;padding:2px 8px;margin-right:6px}
+
+  /* ===== Notifications bell + popover ===== */
+  .bell-btn{width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--border);background:#0e1728;color:#cfe2ff;border-radius:10px;cursor:pointer}
+  .bell-btn:hover{background:#14213b;border-color:#2b3a5e}
+  .bell-dot{position:absolute;top:-4px;right:-4px;background:#22c55e;color:#06210f;border-radius:999px;font-size:11px;line-height:1;padding:2px 6px;border:1px solid #063d25}
+  .notif-pop{position:absolute;top:calc(100% + 10px);right:0;width:min(92vw,380px);background:#0c1426;border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.45);display:none;z-index:20}
+  .notif-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}
+  .notif-title{font-weight:700}
+  .notif-list{max-height:60vh;overflow:auto;padding:8px}
+  .notif-item{display:flex;gap:10px;padding:10px;border:1px solid var(--border);border-radius:12px;background:#0a1324;margin:8px 0}
+  .notif-item .av{width:34px;height:34px;border-radius:50%;background:#10203a;border:1px solid #1d3259;flex:0 0 auto;display:grid;place-items:center;color:#cfe2ff;font-weight:700}
+  .notif-item .av.hasimg{color:transparent;background-size:cover;background-position:center}
+  .notif-meta{font-size:12px;color:var(--muted)}
+  .notif-empty{padding:16px;color:var(--muted)}
+  .notif-list{ scrollbar-width:thin; scrollbar-color:#1e2a44 transparent; }
+  .notif-list::-webkit-scrollbar{ width:10px; }
+  .notif-list::-webkit-scrollbar-track{ background:transparent; }
+  .notif-list::-webkit-scrollbar-thumb{
+    background:#1e2a44;border-radius:999px;border:2px solid transparent;background-clip:padding-box;
+  }
+  .notif-list::-webkit-scrollbar-thumb:hover{ background:#2a3b5f; }
+
+  /* ===== Suggestion Box + Commish inbox ===== */
+  .icon-btn{width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--border);background:#0e1728;color:#cfe2ff;border-radius:10px;cursor:pointer}
+  .icon-btn:hover{background:#14213b;border-color:#2b3a5e}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:40}
+  .modal{position:fixed;left:50%;top:16%;transform:translateX(-50%);width:min(92vw,520px);background:#0c1426;border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.45);display:none;z-index:41}
+  .modal .hd{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border)}
+  .modal .bd{padding:12px 14px;display:grid;gap:10px}
+  .input, .textarea{border:1px solid var(--border);background:#0e1728;color:#e6e9f2;border-radius:10px;padding:10px}
+  .textarea{min-height:120px;resize:vertical}
+  .row{display:flex;gap:10px;align-items:center;justify-content:flex-end}
+  .inbox-pop{position:absolute;top:calc(100% + 10px);right:0;width:min(92vw,420px);background:#0c1426;border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.45);display:none;z-index:30}
+  .inbox-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}
+  .inbox-list{max-height:60vh;overflow:auto;padding:8px; scrollbar-width:thin; scrollbar-color:#1e2a44 transparent;}
+  .inbox-item{border:1px solid var(--border);border-radius:12px;background:#0a1324;padding:10px;margin:8px 0}
+  .inbox-when{font-size:12px;color:var(--muted)}
+  .inbox-list::-webkit-scrollbar{ width:10px; }
+  .inbox-list::-webkit-scrollbar-track{ background:transparent; }
+  .inbox-list::-webkit-scrollbar-thumb{
+    background:#1e2a44;border-radius:999px;border:2px solid transparent;background-clip:padding-box;
+  }
+  .inbox-list::-webkit-scrollbar-thumb:hover{ background:#2a3b5f; }
+
+  .toast{position:fixed;right:18px;bottom:18px;background:#10203a;color:#e6e9f2;border:1px solid var(--border);border-radius:12px;padding:10px 12px;box-shadow:0 10px 24px rgba(0,0,0,.35);z-index:60;display:none}
+
+  /* Keep popovers fully on-screen on phones */
+  @media (max-width: 700px){
+    header{flex-wrap:wrap;gap:8px 10px;padding:12px 14px}
+    h1{font-size:18px}
+    .header-right{order:2}
+    .tabs{order:3;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:8px;scroll-snap-type:x mandatory;margin-inline:-4px;padding-inline:4px}
+    .tabs a{scroll-snap-align:start;padding:10px 12px;font-size:14px}
+    .tabs::-webkit-scrollbar{height:8px}
+    .tabs{scrollbar-width:thin}
+
+    .wrap{padding:14px}
+    .card{padding:12px;border-radius:14px}
+    .section-title{font-size:15px}
+
+    .inbox-pop, .notif-pop{
+      position:fixed;
+      left:max(12px, env(safe-area-inset-left));
+      right:max(12px, env(safe-area-inset-right));
+      width:auto;
+      max-width:420px;
+      top:64px;
+      max-height:calc(80vh - env(safe-area-inset-bottom));
+    }
+    .toast{right:12px;bottom:calc(12px + env(safe-area-inset-bottom))}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>MFFL • Docs</h1>
+    <nav class="tabs" aria-label="Primary">
+      <a href="/">Home</a>
+      <a class="active" href="/app/docs.html">About</a>
+      <a href="/app/teams.html">Spiff Bank</a>
+      <a href="/app/bracket.html">Bracket</a>
+      <a href="/app/cams.html">Cam’s Corner</a>
+    </nav>
+
+    <div class="header-right">
+      <!-- 💡 Suggest -->
+      <button id="suggestBtn" class="icon-btn" title="Submit a suggestion">💡</button>
+
+      <!-- 🔐 Commish unlock + 📥 inbox (hidden until unlocked) -->
+      <button id="commishBtn" class="icon-btn" title="Commissioner unlock">🔐</button>
+      <button id="suggestInboxBtn" class="icon-btn" title="Suggestions inbox" style="display:none">📥</button>
+
+      <!-- 📥 Suggestions inbox popover -->
+      <div id="suggestInbox" class="inbox-pop" role="dialog" aria-label="Suggestions Inbox">
+        <div class="inbox-head">
+          <div style="font-weight:700">Suggestion Inbox</div>
+          <button id="inboxRefresh" class="btn" type="button">Refresh</button>
+        </div>
+        <div id="inboxList" class="inbox-list"><div class="muted" style="padding:10px">Loading…</div></div>
+      </div>
+
+      <!-- 🔔 Bell -->
+      <button id="bellBtn" class="bell-btn" aria-label="Activity">&#128276;<span id="bellDot" class="bell-dot" style="display:none">•</span></button>
+      <!-- Popover -->
+      <div id="notifPop" class="notif-pop" role="dialog" aria-label="Activity" aria-modal="false">
+        <div class="notif-head">
+          <div class="notif-title">Activity</div>
+          <button id="notifRefresh" class="btn" type="button">Refresh</button>
+        </div>
+        <div id="notifList" class="notif-list"><div class="notif-empty">Loading…</div></div>
+      </div>
+
+      <form method="POST" action="/logout"><button class="btn" type="submit">Log out</button></form>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="section-title" style="margin-bottom:14px">
+      <div>
+        <div class="kicker">About the League</div>
+        <div style="font-weight:800;font-size:20px">Rules, Spiffs, Scoring, Trades &amp; Dues</div>
+      </div>
+      <div class="editbar" id="editBar">
+        <button id="toggleEdit" class="btn" type="button">Edit page</button>
+        <button id="saveDoc" class="btn" type="button" disabled>Save</button>
+      </div>
+    </div>
+
+    <div class="doc-grid">
+      <!-- RIGHT COLUMN (Spiffs + Dues) -->
+      <div class="col-right">
+        <section class="card spiffs sticky">
+          <h2 style="margin:0 0 6px">Weekly Spiffs &amp; Incentives</h2>
+          <div id="sec-spiffs" data-editable data-edit-id="spiffs">
+            <p><span class="tag">$25</span> Highest-scoring team each week</p>
+            <p><span class="tag">$25</span> “Spiff of the Week” winner</p>
+            <p class="kicker" style="margin-top:8px">First four Spiffs</p>
+            <ol class="bullets" style="margin-top:6px">
+              <li><strong>Week 1 — Show Me Your TDs:</strong> Most TDs scored (starters only).</li>
+              <li><strong>Week 2 — Blackjack:</strong> Closest to 21.0 points without going over (choose any single starter’s score).</li>
+              <li><strong>Week 3 — Biggest Loser:</strong> Most points in a losing matchup.</li>
+              <li><strong>Week 4 — Ass Beater:</strong> Largest margin of victory.</li>
+            </ol>
+            <p class="muted" style="margin-top:6px">More spiffs will be announced throughout the season.</p>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 style="margin:0 0 6px">League Dues &amp; Payouts</h2>
+          <div id="sec-dues" data-editable data-edit-id="dues">
+            <p><strong>Buy-in:</strong> <span class="money">$150</span> — please pay via Venmo to <em>Kristof</em> before Thursday’s kickoff.</p>
+            <ul class="bullets">
+              <li><strong>1st Place:</strong> $850</li>
+              <li><strong>2nd Place:</strong> $300</li>
+              <li><strong>3rd Place:</strong> $150</li>
+            </ul>
+            <p class="muted">Note: Kristof also started a new league. We wish them well, but this dynasty league is separate and remains our focus. Keep it friendly and reach out to the commissioner with any questions.</p>
+          </div>
+        </section>
+      </div>
+
+      <!-- LEFT COLUMN (Intro, Rules, Scoring, Trade Etiquette) -->
+      <div class="col-left">
+        <section class="card">
+          <h2 style="margin:0 0 6px">Commissioner’s Note</h2>
+          <div id="sec-intro" data-editable data-edit-id="intro" class="lead">
+            <p>Gentlemen,</p>
+            <p>A new chapter begins now. This league is built for the long haul—competition today and a dynasty tomorrow. Draft day is sacred, effort is respected, and we hold each other to a standard.</p>
+            <p>Let’s have fun, talk a little trash, and keep it clean. Looking forward to the season.</p>
+            <p>— The Commish</p>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 style="margin:0 0 6px">Rules &amp; Regulations</h2>
+          <div id="sec-rules" data-editable data-edit-id="rules">
+            <ul class="bullets">
+              <li><strong>Roster adjustments:</strong> +1 IR spot and +1 taxi squad spot. Update before Week 1.</li>
+              <li><strong>Bench reduction:</strong> One bench spot will be removed (as voted).</li>
+              <li><strong>Accountability rule:</strong> If a starting player scores a goose egg, you’ll record a 30-second on-camera apology video, reading a script provided by the commissioner.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 style="margin:0 0 6px">Scoring Settings</h2>
+          <div id="sec-scoring" data-editable data-edit-id="scoring">
+            <p class="muted" style="margin:0 0 6px">Customize these to match your Sleeper setup.</p>
+            <ul class="bullets">
+              <li><strong>Passing:</strong> Yards, TDs, INTs, 2-pt conversions (typical: 4/pt TD, -2 INT, 0.04/yd).</li>
+              <li><strong>Rushing:</strong> Yards, TDs, 2-pt conversions (typical: 6/pt TD, 0.1/yd).</li>
+              <li><strong>Receiving:</strong> Receptions (PPR/Half/Standard), yards, TDs (typical: 1 per rec, 0.1/yd, 6/TD).</li>
+              <li><strong>Fumbles:</strong> Lost fumbles penalty.</li>
+              <li><strong>Kickers:</strong> FG by distance &amp; PAT scoring.</li>
+              <li><strong>Defense/Special Teams:</strong> Points allowed tiers, sacks, INTs, FR, TDs, ST TDs.</li>
+              <li><strong>Bonuses (optional):</strong> Yardage/long TD milestones.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 style="margin:0 0 6px">Trade Etiquette</h2>
+          <div id="sec-trade" data-editable data-edit-id="trade">
+            <ul class="bullets">
+              <li><strong>Be responsive:</strong> Accept/decline/counter in a reasonable timeframe.</li>
+              <li><strong>No veto abuse:</strong> Veto only for clear collusion, not buyer’s remorse.</li>
+              <li><strong>Clarity wins:</strong> Explain context if you’re sending multi-player offers.</li>
+              <li><strong>Respect rebuilds:</strong> Different timelines are okay; keep it fair and clean.</li>
+              <li><strong>Deadlines:</strong> Follow posted trade deadlines and playoff locks.</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+<script>
+/* =================== Config =================== */
+const DOCS_API = '/api/docs'; // GET -> { sections: { id: "<html>" } } ; PUT same shape
+let isCommish = false;
+let editMode = false;
+
+/* =================== Helpers =================== */
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(()=> t.style.display='none', 2200);
+}
+function setEditable(on){
+  document.body.classList.toggle('editing', !!on);
+  document.querySelectorAll('[data-editable]').forEach(el=>{
+    el.setAttribute('contenteditable', on ? 'true' : 'false');
+  });
+  document.getElementById('saveDoc').disabled = !on;
+  document.getElementById('toggleEdit').textContent = on ? 'Done editing' : 'Edit page';
+}
+function markDirty(){
+  if (editMode) document.getElementById('saveDoc').disabled = false;
+}
+function collectSections(){
+  const payload = { sections: {} };
+  document.querySelectorAll('[data-edit-id]').forEach(el=>{
+    payload.sections[el.getAttribute('data-edit-id')] = el.innerHTML.trim();
+  });
+  return payload;
+}
+function applySections(sections){
+  if (!sections) return;
+  for (const [id, html] of Object.entries(sections)){
+    const el = document.querySelector('[data-edit-id="'+id+'"]');
+    if (el && typeof html === 'string') el.innerHTML = html;
+  }
+}
+
+/* =================== Load / Save =================== */
+async function loadDocs(){
+  try{
+    const r = await fetch(DOCS_API);
+    if (!r.ok) return; // keep defaults
+    const j = await r.json();
+    if (j && j.sections) applySections(j.sections);
+  }catch{ /* fall back to defaults already in DOM */ }
+}
+async function saveDocs(){
+  const data = collectSections();
+  try{
+    const r = await fetch(DOCS_API, {
+      method:'PUT',
+      headers:{ 'content-type':'application/json' },
+      body: JSON.stringify(data)
+    });
+    const j = await r.json().catch(()=>({}));
+    if (!r.ok || (j.ok===false)) throw new Error(j.error||'Failed');
+    showToast('Saved.');
+  }catch{ showToast('Save failed.'); }
+}
+
+/* ===================== Notifications UI (shared) ===================== */
+const bellBtn = document.getElementById('bellBtn');
+const bellDot = document.getElementById('bellDot');
+const notifPop = document.getElementById('notifPop');
+const notifList = document.getElementById('notifList');
+const notifRefresh = document.getElementById('notifRefresh');
+let notifLoaded = false;
+
+function timeAgo(iso){
+  const s = Math.floor((Date.now() - new Date(iso).getTime())/1000);
+  const m = Math.floor(s/60), h = Math.floor(m/60), d = Math.floor(h/24);
+  if (d>0) return d+'d ago'; if (h>0) return h+'h ago'; if (m>0) return m+'m ago'; return 'just now';
+}
+function notifAvatar(team){
+  const url = team?.avatarThumb;
+  if (url) return `<div class="av hasimg" style="background-image:url('${url}')">.</div>`;
+  const init = (team?.team||'?').split(/\s+/).map(s=>s[0]||'').slice(0,2).join('').toUpperCase() || '🙂';
+  return `<div class="av">${init}</div>`;
+}
+function describeTx(t){
+  const tlabel = ({waiver:'waiver', free_agent:'free agent', trade:'trade', draft:'draft'}[t.type]) || t.type;
+  if (t.type==='trade' && t.rosters?.length>=2){
+    const a=t.rosters[0]?.team, b=t.rosters[1]?.team;
+    return `<strong>${a}</strong> ↔ <strong>${b}</strong> completed a trade.`;
+  }
+  const add = t.adds?.[0];
+  const drop = t.drops?.[0];
+  if (add && drop){
+    return `<strong>${add.to.team}</strong> added <strong>${add.name}</strong> and dropped <strong>${drop.name}</strong> (${tlabel}).`;
+  }
+  if (add){
+    return `<strong>${add.to.team}</strong> added <strong>${add.name}</strong> (${tlabel})${t.waiver_bid?` for $${t.waiver_bid}`:''}.`;
+  }
+  if (drop){
+    return `<strong>${drop.from.team}</strong> dropped <strong>${drop.name}</strong>.`;
+  }
+  return `${t.type} activity.`;
+}
+async function loadNotifications(force=false){
+  if (notifLoaded && !force) return;
+  notifList.innerHTML = `<div class="notif-empty">Loading…</div>`;
+  try{
+    const r = await fetch('/api/sleeper/transactions');
+    const data = await r.json();
+    const items = (data.items||[]);
+    bellDot.style.display = items.length ? '' : 'none';
+    if (!items.length){
+      notifList.innerHTML = `<div class="notif-empty">No recent activity.</div>`;
+      notifLoaded = true; return;
+    }
+    notifList.innerHTML = items.map(t=>{
+      const team = (t.rosters&&t.rosters[0]) || null;
+      return `<div class="notif-item">
+        ${notifAvatar(team)}
+        <div>
+          <div>${describeTx(t)}</div>
+          <div class="notif-meta">${timeAgo(t.when)} • Week ${t.round}</div>
+        </div>
+      </div>`;
+    }).join('');
+    notifLoaded = true;
+  }catch(e){
+    notifList.innerHTML = `<div class="notif-empty">Could not load activity.</div>`;
+  }
+}
+function toggleNotif(){
+  const open = notifPop.style.display === 'block';
+  if (open){ notifPop.style.display = 'none'; }
+  else { notifPop.style.display = 'block'; loadNotifications(false); }
+}
+bellBtn.addEventListener('click', (e)=>{ e.stopPropagation(); toggleNotif(); });
+notifRefresh.addEventListener('click', (e)=>{ e.stopPropagation(); notifLoaded=false; loadNotifications(true); });
+document.addEventListener('click', (e)=>{
+  if (notifPop.style.display==='block' && !notifPop.contains(e.target) && e.target!==bellBtn){
+    notifPop.style.display='none';
+  }
+});
+
+/* ================= Suggestion Box + Commish (shared) ================= */
+const modalBackdrop = document.getElementById('modalBackdrop') || (function(){
+  const el = document.createElement('div'); el.id='modalBackdrop'; el.className='modal-backdrop'; document.body.appendChild(el); return el;
+})();
+
+function ensureModal(id, html){
+  if (!document.getElementById(id)) {
+    const div = document.createElement('div'); div.innerHTML = html; document.body.appendChild(div);
+  }
+}
+ensureModal('suggestModal', `
+<div id="suggestModal" class="modal" role="dialog" aria-label="Submit a suggestion">
+  <div class="hd">
+    <div style="font-weight:700">Submit a suggestion</div>
+    <button class="btn ghost" type="button" onclick="(document.getElementById('suggestModal').style.display='none', document.getElementById('modalBackdrop').style.display='none')">✕</button>
+  </div>
+  <form id="suggestForm" class="bd">
+    <input class="input" name="name" placeholder="Your name (optional)"/>
+    <textarea class="textarea" name="text" placeholder="Your suggestion…" required></textarea>
+    <div class="row">
+      <button class="btn ghost" type="button" onclick="(document.getElementById('suggestModal').style.display='none', document.getElementById('modalBackdrop').style.display='none')">Cancel</button>
+      <button class="btn" type="submit">Send</button>
+    </div>
+  </form>
+</div>`);
+ensureModal('commishModal', `
+<div id="commishModal" class="modal" role="dialog" aria-label="Commissioner unlock">
+  <div class="hd">
+    <div style="font-weight:700">Commissioner unlock</div>
+    <button class="btn ghost" type="button" onclick="(document.getElementById('commishModal').style.display='none', document.getElementById('modalBackdrop').style.display='none')">✕</button>
+  </div>
+  <form id="commishForm" class="bd">
+    <input class="input" name="commish_password" type="password" placeholder="Commissioner password" required/>
+    <div class="row">
+      <button class="btn ghost" type="button" onclick="(document.getElementById('commishModal').style.display='none', document.getElementById('modalBackdrop').style.display='none')">Cancel</button>
+      <button class="btn" type="submit">Unlock</button>
+    </div>
+  </form>
+</div>`);
+ensureModal('suggestInbox', `
+<div id="suggestInbox" class="inbox-pop" role="dialog" aria-label="Suggestions Inbox">
+  <div class="inbox-head">
+    <div style="font-weight:700">Suggestion Inbox</div>
+    <button id="inboxRefresh" class="btn" type="button">Refresh</button>
+  </div>
+  <div id="inboxList" class="inbox-list"><div class="muted" style="padding:10px">Loading…</div></div>
+</div>`);
+if (!document.getElementById('toast')){
+  const t = document.createElement('div'); t.id='toast'; t.className='toast'; document.body.appendChild(t);
+}
+
+const suggestBtn = document.getElementById('suggestBtn');
+const commishBtn = document.getElementById('commishBtn');
+const inboxBtn   = document.getElementById('suggestInboxBtn');
+const inboxPop   = document.getElementById('suggestInbox');
+const inboxList  = document.getElementById('inboxList');
+const inboxRefresh = document.getElementById('inboxRefresh');
+
+function openModal(el){ modalBackdrop.style.display='block'; el.style.display='block'; }
+function closeModal(el){ el.style.display='none'; modalBackdrop.style.display='none'; }
+
+suggestBtn.addEventListener('click', ()=> openModal(document.getElementById('suggestModal')));
+commishBtn.addEventListener('click', ()=> openModal(document.getElementById('commishModal')));
+modalBackdrop.addEventListener('click', ()=>{ closeModal(document.getElementById('suggestModal')); closeModal(document.getElementById('commishModal')); });
+
+document.getElementById('suggestForm')?.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const payload = { name: fd.get('name')||'', text: fd.get('text')||'' };
+  try{
+    const r = await fetch('/api/suggestions', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(payload) });
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.error || 'Failed');
+    e.target.reset();
+    closeModal(document.getElementById('suggestModal'));
+    showToast('Suggestion submitted. Thanks!');
+  }catch{ showToast('Could not submit suggestion.'); }
+});
+
+document.getElementById('commishForm')?.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  try{
+    const r = await fetch('/commish-login', {
+      method:'POST',
+      headers:{ 'content-type':'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ commish_password: fd.get('commish_password') })
+    });
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.error || 'Failed');
+    isCommish = true;
+    document.body.classList.add('is-commish');
+    document.getElementById('suggestInboxBtn').style.display = '';
+    closeModal(document.getElementById('commishModal'));
+    showToast('Commissioner unlocked.');
+  }catch{ showToast('Invalid commissioner password.'); }
+});
+
+async function loadInbox(force=false){
+  if (!isCommish) return;
+  if (force) inboxList.innerHTML = '<div class="muted" style="padding:10px">Loading…</div>';
+  try{
+    const r = await fetch('/api/suggestions'); const data = await r.json();
+    if (!r.ok) throw new Error();
+    const items = data.items || [];
+    if (!items.length){
+      inboxList.innerHTML = '<div class="muted" style="padding:10px">No suggestions yet.</div>';
+      return;
+    }
+    inboxList.innerHTML = items.map(s => `
+      <div class="inbox-item">
+        <div class="inbox-when">${new Date(s.when).toLocaleString()}</div>
+        <div style="margin-top:6px">${(s.name ? `<strong>${String(s.name).replace(/</g,'&lt;')}</strong>: ` : '')}${String(s.text||'').replace(/</g,'&lt;')}</div>
+      </div>`).join('');
+  }catch{
+    inboxList.innerHTML = '<div class="muted" style="padding:10px">Could not load suggestions.</div>';
+  }
+}
+inboxBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  const open = inboxPop.style.display === 'block';
+  inboxPop.style.display = open ? 'none' : 'block';
+  if (!open) loadInbox(true);
+});
+inboxRefresh.addEventListener('click', (e)=>{ e.stopPropagation(); loadInbox(true); });
+document.addEventListener('click', (e)=>{
+  if (inboxPop.style.display === 'block' && !inboxPop.contains(e.target) && e.target !== inboxBtn) {
+    inboxPop.style.display = 'none';
+  }
+});
+
+/* =================== Edit bar actions =================== */
+document.getElementById('toggleEdit').addEventListener('click', ()=>{
+  editMode = !editMode;
+  setEditable(editMode);
+  if (editMode){
+    document.querySelectorAll('[data-editable]').forEach(el=>{
+      el.addEventListener('input', markDirty, { once:false });
+    });
+  }
+});
+document.getElementById('saveDoc').addEventListener('click', async ()=>{
+  await saveDocs();
+  editMode = false; setEditable(false);
+});
+
+/* =================== Init =================== */
+(async function init(){
+  try{ const r = await fetch('/api/me'); const me = await r.json(); isCommish = !!me.is_commish; }catch{}
+  if (isCommish){ document.body.classList.add('is-commish'); document.getElementById('suggestInboxBtn').style.display=''; }
+  await loadDocs();
+})();
+</script>
+</body>
+</html>
